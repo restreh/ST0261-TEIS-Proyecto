@@ -1,0 +1,15 @@
+{% extends 'store/base.html' %}
+{% block title %}{% if object %}Editar Reseña{% else %}Nueva Reseña{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{% if object %}Editar Reseña{% else %}Nueva Reseña{% endif %}</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">
+            {% if object %}Actualizar{% else %}Enviar{% endif %}
+        </button>
+    </form>
+</div>
+{% endblock %}

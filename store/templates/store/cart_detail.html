@@ -1,42 +1,46 @@
 {% extends 'store/base.html' %}
-
 {% block title %}Carrito de Compras{% endblock %}
-
 {% block content %}
 <div class="container mt-4">
     <h1>Carrito de Compras</h1>
     {% if cart_items %}
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Producto</th>
-                <th>Cantidad</th>
-                <th>Subtotal</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in cart_items %}
-            <tr>
-                <td>{{ item.product.name }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>${{ item.subtotal }}</td>
-                <td>
+    {% for item in cart_items %}
+    <div class="card mb-3">
+        <div class="card-body d-flex">
+            <div class="flex-grow-1">
+                <p><strong>{{ item.product.name }}</strong></p>
+                {% if item.variant %}
+                <p>
+                    {% if item.variant.color %}Color: {{ item.variant.color.name }}{% endif %}
+                </p>
+                <p>
+                    {% if item.variant.size %}Talla: {{ item.variant.size.value }}{% endif %}
+                </p>
+                {% endif %}
+                <p>Cantidad: {{ item.quantity }}</p>
+                <p>Precio unitario: ${{ item.price }}</p>
+                <p>Subtotal: ${{ item.subtotal }}</p>
+                <div>
                     <form action="{% url 'remove_from_cart' item.product.id %}" method="post" style="display:inline;">
                         {% csrf_token %}
                         <input type="number" name="quantity" value="1" min="1" style="width:60px;">
                         <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
                     </form>
-                </td>
-            </tr>
-            {% endfor %}
-            <tr>
-                <td colspan="2" class="text-end"><strong>Total:</strong></td>
-                <td><strong>${{ total }}</strong></td>
-                <td></td>
-            </tr>
-        </tbody>
-    </table>
+                </div>
+            </div>
+            <div>
+                {% if item.variant and item.variant.images.first %}
+                <img src="{{ item.variant.images.first.image.url }}" alt="{{ item.product.name }}" style="width:150px;">
+                {% else %}
+                <img src="{{ item.product.get_default_image_url }}" alt="{{ item.product.name }}" style="width:150px;">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    <div class="mb-3">
+        <h4>Total: ${{ total }}</h4>
+    </div>
     <form action="{% url 'create_order' %}" method="post">
         {% csrf_token %}
         <button type="submit" class="btn btn-success">Comprar</button>

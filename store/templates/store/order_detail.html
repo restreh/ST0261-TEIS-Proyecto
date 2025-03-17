@@ -1,0 +1,48 @@
+{% extends 'store/base.html' %}
+
+{% block title %}Detalle de Orden #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Detalle de Orden #{{ order.id }}</h1>
+    <p><strong>Fecha:</strong> {{ order.order_date|date:"SHORT_DATETIME_FORMAT" }}</p>
+    <p><strong>Total:</strong> ${{ order.total }}</p>
+    <p><strong>Estado:</strong>
+        {% if order.entregado %}
+        <span style="color:green;">Entregado</span>
+        {% elif order.enviado %}
+        <span style="color:orange;">Enviado</span>
+        {% else %}
+        {{ order.status }}
+        {% endif %}
+    </p>
+    <p><strong>Dirección de Envío:</strong> {{ order.shipping_address }}</p>
+    <hr>
+    <h3>Productos en la Orden</h3>
+    {% for obj in order_items %}
+    <div class="card mb-2">
+        <div class="card-body d-flex">
+            <div class="flex-grow-1">
+                <p><strong>{{ obj.item.item.product.name }}</strong></p>
+                <p>
+                    {% if obj.item.item.color %}Color: {{ obj.item.item.color.name }}{% endif %}
+                </p>
+                <p> 
+                    {% if obj.item.item.size %}Talla: {{ obj.item.item.size.value }}{% endif %}
+                </p>
+                <p>Cantidad: {{ obj.item.quantity }}</p>
+                <p>Precio unitario: ${{ obj.item.purchase_price }}</p>
+                <p>Subtotal: ${{ obj.subtotal }}</p>
+            </div>
+            <div>
+                {% if obj.item.item.images.first %}
+                <img src="{{ obj.item.item.images.first.image.url }}" alt="{{ obj.item.item.product.name }}"
+                    style="width:150px;">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    <a href="{% url 'order_list' %}" class="btn btn-secondary">Volver a Mis Compras</a>
+</div>
+{% endblock %}

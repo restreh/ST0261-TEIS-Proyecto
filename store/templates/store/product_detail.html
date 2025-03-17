@@ -1,0 +1,190 @@
+{% extends 'store/base.html' %}
+{% load static %}
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ product.name }}</h1>
+    <div class="row">
+        <!-- Columna de Imagen Principal -->
+        <div class="col-md-6 mb-3">
+            <img id="main-image" src="{{ product.get_default_image_url }}" class="img-fluid border"
+                alt="{{ product.name }}" style="height: 400px; width: 100%; object-fit: contain;">
+        </div>
+        <!-- Columna de Selección -->
+        <div class="col-md-6">
+            <!-- Precio dinámico -->
+            <p><strong>Precio:</strong> <span id="price-display"></span></p>
+            <p><strong>Descripción:</strong> {{ product.description }}</p>
+            <p><strong>Materiales:</strong> {{ product.materials }}</p>
+            <p><strong>Guía de cuidado:</strong> {{ product.care_guide }}</p>
+
+            <!-- Selección de Color -->
+            <p><strong>COLOR:</strong> <span id="selected-color-name">Ninguno</span></p>
+            <div class="d-flex mb-3" id="color-selection">
+                {% for c in colors %}
+                <div class="color-box me-2 text-center border p-2" style="width: 80px; cursor: pointer;"
+                    data-color-id="{{ c.color__id }}" data-color-name="{{ c.color__name }}">
+                    <img id="color-thumb-{{ c.color__id }}" src="#" alt="thumb"
+                        style="width:60px; height:60px; object-fit: cover;">
+                    <p class="mb-0" style="font-size: 1rem;">{{ c.color__name }}</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Selección de Talla -->
+            <p><strong>TALLA:</strong> <span id="selected-size-name">Ninguna</span></p>
+            <div class="d-flex mb-3" id="size-selection">
+                {% for s in sizes %}
+                <div class="size-box me-2 text-center border p-2" style="width: 60px; cursor: pointer;"
+                    data-size-id="{{ s.size__id }}" data-size-value="{{ s.size__value }}">
+                    {{ s.size__value }}
+                </div>
+                {% endfor %}
+            </div>
+            <div id="size-error-message" style="color:red; display:none;">No se encuentra disponible en esta talla</div>
+
+            <!-- Formulario para Agregar al Carrito -->
+            <form id="add-to-cart-form" action="{% url 'add_to_cart' product.id %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="variant_id" id="variant_id" value="">
+                <div class="mb-3">
+                    <label for="quantity" class="form-label">Cantidad:</label>
+                    <input type="number" name="quantity" id="quantity" value="1" min="1" class="form-control"
+                        style="max-width: 100px;">
+                </div>
+                <button type="submit" class="btn btn-success" id="add-to-cart-btn" disabled>Añadir al Carrito</button>
+            </form>
+        </div>
+    </div>
+
+    <hr>
+    <!-- Sección de Reseñas -->
+    <h3>Reseñas</h3>
+    {% for review in reviews %}
+    <div class="card mb-2">
+        <div class="card-body">
+            <p><strong>{{ review.user.username }}</strong> - {{ review.rating }}/5</p>
+            <p>{{ review.comment }}</p>
+            <small class="text-muted">{{ review.created_at|date:"SHORT_DATETIME_FORMAT" }}</small>
+            {% if user == review.user %}
+            <div>
+                <a href="{% url 'edit_review' review.id %}" class="btn btn-sm btn-primary">Editar</a>
+                <a href="{% url 'delete_review' review.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <p>No hay reseñas aún.</p>
+    {% endfor %}
+
+    {% if purchased and user.is_authenticated %}
+    <hr>
+    <h4>{% if user_review %}Editar tu Reseña{% else %}Deja tu Reseña{% endif %}</h4>
+    <form method="post"
+        action="{% if user_review %}{% url 'edit_review' user_review.id %}{% else %}{% url 'create_review' product.id %}{% endif %}">
+        {% csrf_token %}
+        {{ review_form.as_p }}
+        <button type="submit" class="btn btn-primary">{% if user_review %}Actualizar{% else %}Enviar{% endif %}</button>
+    </form>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Datos que vienen de la vista
+        const colorMap = JSON.parse(`{{ color_map_json|safe }}`);
+        const variantMap = JSON.parse(`{{ variant_map_json|safe }}`);
+
+        // Referencias a elementos del DOM
+        const mainImage = document.getElementById('main-image');
+        const priceDisplay = document.getElementById('price-display');
+        const variantIdInput = document.getElementById('variant_id');
+        const addToCartBtn = document.getElementById('add-to-cart-btn');
+        const selectedColorName = document.getElementById('selected-color-name');
+        const selectedSizeName = document.getElementById('selected-size-name');
+        const errorMessage = document.getElementById('size-error-message');
+
+        let selectedColorId = null;
+        let selectedSizeId = null;
+
+        // Función para formatear el precio
+        function formatPrice(num) {
+            let n = parseFloat(num);
+            if (isNaN(n)) n = 0;
+            return n.toLocaleString('es-CO', {
+                style: 'currency',
+                currency: 'COP',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        }
+
+        // Llenar las miniaturas de color
+        for (const [colorId, data] of Object.entries(colorMap)) {
+            const thumb = document.getElementById(`color-thumb-${colorId}`);
+            if (thumb) {
+                thumb.src = data.image_url;
+            }
+        }
+
+        // Seleccionar por defecto el primer color (si existe)
+        const colorKeys = Object.keys(colorMap);
+        if (colorKeys.length > 0) {
+            selectedColorId = colorKeys[0];
+            selectedColorName.textContent = colorMap[selectedColorId].color_name || "Color " + selectedColorId;
+            mainImage.src = colorMap[selectedColorId].image_url;
+            priceDisplay.textContent = formatPrice(colorMap[selectedColorId].price);
+            // Deshabilitar el botón hasta que se seleccione talla (si aplica)
+            addToCartBtn.disabled = true;
+        } else {
+            priceDisplay.textContent = formatPrice("{{ product.base_price }}");
+        }
+
+        // Actualizar la UI (imagen, precio y variant_id)
+        function updateUI() {
+            if (selectedColorId) {
+                if (selectedSizeId && variantMap[selectedColorId] && variantMap[selectedColorId][selectedSizeId]) {
+                    const data = variantMap[selectedColorId][selectedSizeId];
+                    mainImage.src = data.image_url;
+                    priceDisplay.textContent = formatPrice(data.price);
+                    variantIdInput.value = data.variant_id;
+                    addToCartBtn.disabled = false;
+                    errorMessage.style.display = 'none';
+                } else {
+                    mainImage.src = colorMap[selectedColorId].image_url;
+                    priceDisplay.textContent = formatPrice(colorMap[selectedColorId].price);
+                    variantIdInput.value = '';
+                    addToCartBtn.disabled = true;
+                    if (selectedSizeId && (!variantMap[selectedColorId] || !variantMap[selectedColorId][selectedSizeId])) {
+                        errorMessage.style.display = 'block';
+                    } else {
+                        errorMessage.style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        // Manejo de clic en color
+        document.querySelectorAll('#color-selection .color-box').forEach((box) => {
+            box.addEventListener('click', () => {
+                selectedColorId = box.getAttribute('data-color-id');
+                selectedColorName.textContent = box.getAttribute('data-color-name');
+                selectedSizeId = null;
+                selectedSizeName.textContent = 'Ninguna';
+                updateUI();
+            });
+        });
+
+        // Manejo de clic en talla
+        document.querySelectorAll('#size-selection .size-box').forEach((box) => {
+            box.addEventListener('click', () => {
+                selectedSizeId = box.getAttribute('data-size-id');
+                selectedSizeName.textContent = box.getAttribute('data-size-value');
+                updateUI();
+            });
+        });
+    });
+</script>
+{% endblock %}

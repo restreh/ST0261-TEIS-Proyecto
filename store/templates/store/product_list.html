@@ -1,5 +1,6 @@
 {% extends 'store/base.html' %}
-
+{% load static %}
+{% load humanize %}
 {% block title %}Productos Disponibles{% endblock %}
 
 {% block content %}
@@ -8,17 +9,25 @@
     <div class="row">
         {% for product in products %}
         <div class="col-md-4">
-            <div class="card mb-4 shadow-sm">
-                {% if product.get_default_image_url %}
-                <img src="{{ product.get_default_image_url }}" class="card-img-top" alt="{{ product.name }}">
-                {% else %}
-                <img src="https://via.placeholder.com/300x200?text=Sin+imagen" class="card-img-top" alt="Sin imagen">
-                {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ product.name }}</h5>
+            <div class="card mb-4 shadow-sm" style="height: 450px;">
+                <a href="{% url 'product_detail' product.id %}">
+                    {% if product.get_default_image_url %}
+                    <img src="{{ product.get_default_image_url }}" class="card-img-top" alt="{{ product.name }}"
+                        style="height: 200px; width: 100%; object-fit: contain;">
+                    {% else %}
+                    <img src="#" class="card-img-top" alt="Sin imagen"
+                        style="height: 200px; width: 100%; object-fit: contain;">
+                    {% endif %}
+                </a>
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">
+                        <a href="{% url 'product_detail' product.id %}" style="text-decoration: none; color: inherit;">
+                            {{ product.name }}
+                        </a>
+                    </h5>
                     <p class="card-text">{{ product.description|truncatewords:20 }}</p>
-                    <p class="card-text"><strong>Precio:</strong> ${{ product.base_price }}</p>
-                    <div class="d-flex justify-content-between align-items-center">
+                    <p class="card-text"><strong>Precio:</strong> ${{ product.base_price|floatformat:0|intcomma }}</p>
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
                         <form action="{% url 'add_to_cart' product.id %}" method="post" class="flex-grow-1 me-2">
                             {% csrf_token %}
                             <div class="input-group">

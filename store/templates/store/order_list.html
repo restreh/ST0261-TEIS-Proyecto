@@ -6,19 +6,23 @@
     {% for order in orders %}
     <div class="card mb-3">
         <div class="card-body">
-            <h5 class="card-title">Orden #{{ order.id }}</h5>
+            <h5 class="card-title">
+                <!-- Enlace clickeable a la vista de detalle de la orden -->
+                <a href="{% url 'order_detail' order.id %}" style="text-decoration: none; color: inherit;">
+                    Orden #{{ order.id }}
+                </a>
+            </h5>
             <p class="card-text">
                 <strong>Fecha:</strong> {{ order.order_date|date:"SHORT_DATETIME_FORMAT" }} <br>
                 <strong>Total:</strong> ${{ order.total }} <br>
                 <strong>Estado:</strong>
                 {% if order.entregado %}
-                <strong><span style="color: green;">Entregado</span> </strong> <br>
+                <strong><span style="color: green;">Entregado</span></strong><br>
                 {% elif order.enviado %}
-                <strong><span style="color: orange;">Enviado</span> </strong> <br>
+                <strong><span style="color: orange;">Enviado</span></strong><br>
                 {% else %}
-                {{ order.status }} <br>
+                {{ order.status }}<br>
                 {% endif %}
-
                 <strong>Dirección de envío:</strong> {{ order.shipping_address }}
             </p>
             <ul class="list-group list-group-flush mb-3">
@@ -46,6 +50,8 @@
                     <button type="submit" class="btn btn-primary">Pagar ahora</button>
                 </form>
                 {% endif %}
+                <!-- Botón para ver el detalle de la orden -->
+                <a href="{% url 'order_detail' order.id %}" class="btn btn-info">Ver Detalle</a>
             </div>
         </div>
     </div>

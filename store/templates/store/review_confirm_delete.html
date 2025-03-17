@@ -1,0 +1,14 @@
+{% extends 'store/base.html' %}
+{% block title %}Eliminar Reseña{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Eliminar Reseña</h1>
+    <p>¿Estás seguro de que deseas eliminar esta reseña?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Eliminar</button>
+        <a href="{% url 'product_detail' object.product.id %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

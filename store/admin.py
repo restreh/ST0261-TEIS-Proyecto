@@ -64,9 +64,9 @@ class OrderAdmin(admin.ModelAdmin):
     fields = ('user', 'status', 'shipping_address', 'payment', 'enviado', 'entregado')
     
     def save_model(self, request, obj, form, change):
-        if obj.status == 'Cancelado':
+        if obj.status == 'Cancelado' or obj.status == 'Pendiente':
             if 'enviado' in form.changed_data or 'entregado' in form.changed_data:
-                self.message_user(request, _("No se pueden actualizar los estados de una orden cancelada."), messages.ERROR)
+                self.message_user(request, _("No se pueden actualizar los estados de una orden cancelada o pendiente de pago."), messages.ERROR)
                 return
         
         if change:

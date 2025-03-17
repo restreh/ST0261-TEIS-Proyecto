@@ -156,11 +156,11 @@ class Order(models.Model):
         ('Cancelado', 'Cancelado'),
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders")
-    order_date = models.DateTimeField(auto_now_add=True)
-    total = models.DecimalField(max_digits=10, decimal_places=2)
+    order_date = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de la Orden")
+    total = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Total")
     payment = models.OneToOneField(Payment, on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pendiente")
-    shipping_address = models.CharField(max_length=255)
+    shipping_address = models.CharField(max_length=255, verbose_name="Dirección de envío")
     enviado = models.BooleanField(default=False)
     entregado = models.BooleanField(default=False)
 
@@ -174,8 +174,23 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     item = models.ForeignKey('ProductVariant', on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
-    purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField(verbose_name="Cantidad")
+    purchase_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Precio de compra")
 
     def __str__(self):
         return f"{self.item} x {self.quantity}"
+    
+
+class ProductReview(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reviews')
+    comment = models.TextField(verbose_name="Comentario")
+    rating = models.PositiveSmallIntegerField(verbose_name="Calificación")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Reseña de {self.user.username} - {self.rating}"
+
+    class Meta:
+        verbose_name = "Reseña de Producto"
+        verbose_name_plural = "Reseñas de Producto"
