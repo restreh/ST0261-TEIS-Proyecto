@@ -1,6 +1,12 @@
 from django.db import models
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils.text import slugify
 from pydantic import ValidationError
+import uuid
+from decimal import Decimal
+from django.conf import settings
 
 class Color(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -112,3 +118,64 @@ class ProductImage(models.Model):
     class Meta:
         verbose_name = "Imagen de Producto"
         verbose_name_plural = "Imágenes de Producto"
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    shipping_address = models.CharField(max_length=255, verbose_name="Dirección")
+    phone_number = models.CharField(max_length=20, verbose_name="Teléfono")
+    wish_list = models.ManyToManyField('Product', blank=True, verbose_name="Lista de Deseados")
+
+    def __str__(self):
+        return f"Perfil de {self.user.username}"
+
+@receiver(post_save, sender=User)
+def create_or_update_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.get_or_create(user=instance)
+    else:
+        try:
+            instance.profile.save()
+        except Profile.DoesNotExist:
+            Profile.objects.get_or_create(user=instance)
+
+
+class Payment(models.Model):
+    transaction_id = models.CharField(max_length=50, unique=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, default="Pendiente")
+
+    def __str__(self):
+        return f"Pago {self.transaction_id} - {self.status}"
+
+class Order(models.Model):
+    STATUS_CHOICES = (
+        ('Pendiente', 'Pendiente'),
+        ('Pagado', 'Pagado'),
+        ('Cancelado', 'Cancelado'),
+    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders")
+    order_date = models.DateTimeField(auto_now_add=True)
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    payment = models.OneToOneField(Payment, on_delete=models.SET_NULL, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pendiente")
+    shipping_address = models.CharField(max_length=255)
+    enviado = models.BooleanField(default=False)
+    entregado = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Orden {self.id} - {self.status}"
+    
+    class Meta:
+        verbose_name = "Orden de Compra"
+        verbose_name_plural = "Órdenes de Compra"
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+    item = models.ForeignKey('ProductVariant', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.item} x {self.quantity}"

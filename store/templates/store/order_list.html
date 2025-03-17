@@ -1,0 +1,56 @@
+{% extends 'store/base.html' %}
+{% block title %}Mis Compras{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h1>Mis Compras</h1>
+    {% for order in orders %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Orden #{{ order.id }}</h5>
+            <p class="card-text">
+                <strong>Fecha:</strong> {{ order.order_date|date:"SHORT_DATETIME_FORMAT" }} <br>
+                <strong>Total:</strong> ${{ order.total }} <br>
+                <strong>Estado:</strong>
+                {% if order.entregado %}
+                <strong><span style="color: green;">Entregado</span> </strong> <br>
+                {% elif order.enviado %}
+                <strong><span style="color: orange;">Enviado</span> </strong> <br>
+                {% else %}
+                {{ order.status }} <br>
+                {% endif %}
+
+                <strong>Dirección de envío:</strong> {{ order.shipping_address }}
+            </p>
+            <ul class="list-group list-group-flush mb-3">
+                {% for item in order.items.all %}
+                <li class="list-group-item">
+                    {{ item.item.product.name }} -
+                    {% if item.item.color %}{{ item.item.color.name }}{% endif %}
+                    {% if item.item.size %}{{ item.item.size.value }}{% endif %}
+                    x {{ item.quantity }} - ${{ item.purchase_price }}
+                </li>
+                {% endfor %}
+            </ul>
+            <div>
+                {% if order.status == "Pendiente" or order.status == "Pagado" %}
+                {% if not order.enviado and not order.entregado %}
+                <form action="{% url 'cancel_order' order.id %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Cancelar Orden</button>
+                </form>
+                {% endif %}
+                {% endif %}
+                {% if order.status == "Pendiente" %}
+                <form action="{% url 'pay_order' order.id %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">Pagar ahora</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p>No has realizado compras.</p>
+    {% endfor %}
+</div>
+{% endblock %}

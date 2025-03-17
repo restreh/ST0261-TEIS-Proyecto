@@ -1,0 +1,49 @@
+{% extends 'store/base.html' %}
+
+{% block title %}Carrito de Compras{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Carrito de Compras</h1>
+    {% if cart_items %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Subtotal</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_items %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ item.subtotal }}</td>
+                <td>
+                    <form action="{% url 'remove_from_cart' item.product.id %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="number" name="quantity" value="1" min="1" style="width:60px;">
+                        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="2" class="text-end"><strong>Total:</strong></td>
+                <td><strong>${{ total }}</strong></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+    <form action="{% url 'create_order' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success">Comprar</button>
+    </form>
+    {% else %}
+    <p>No tienes productos en el carrito.</p>
+    {% endif %}
+    <a href="{% url 'product_list' %}" class="btn btn-primary mt-3">Continuar Comprando</a>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'store/base.html' %}
+{% block title %}Favoritos{% endblock %}
+{% block content %}
+<h1>Mis Favoritos</h1>
+{% if wish_list %}
+<div class="row">
+    {% for product in wish_list %}
+    <div class="col-md-4">
+        <div class="card mb-4 shadow-sm">
+            {% if product.get_default_image_url %}
+            <img src="{{ product.get_default_image_url }}" class="card-img-top" alt="{{ product.name }}">
+            {% else %}
+            <img src="#" class="card-img-top" alt="Sin imagen">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text">{{ product.description|truncatewords:20 }}</p>
+                <form action="{% url 'remove_wish' product.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Quitar de Favoritos</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p>No tienes productos en favoritos.</p>
+{% endif %}
+{% endblock %}
