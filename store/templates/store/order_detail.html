@@ -43,6 +43,13 @@
         </div>
     </div>
     {% endfor %}
-    <a href="{% url 'order_list' %}" class="btn btn-secondary">Volver a Mis Compras</a>
+    <div class="mt-4 d-flex justify-content-between">
+        <a href="{% url 'order_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a Mis Compras
+        </a>
+        <a href="{% url 'order_pdf' order.id %}" class="btn btn-primary" download>
+            <i class="fas fa-file-download"></i> Descargar PDF
+        </a>
+    </div>
 </div>
 {% endblock %}

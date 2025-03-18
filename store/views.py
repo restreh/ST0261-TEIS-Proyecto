@@ -1,21 +1,65 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, get_object_or_404
 from django.views import View
 from django.views.generic import ListView, TemplateView, DetailView
 from django.views.generic.edit import FormView, CreateView, UpdateView, DeleteView
-from .models import Order, OrderItem, Payment, Product, ProductVariant, ProductReview
+from django.http import HttpResponse
+from .models import Order, OrderItem, Payment, Product, ProductVariant, ProductReview, Color, Size
 from .forms import RegistrationForm, ProductReviewForm
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 import uuid
 from decimal import Decimal
 from django.contrib import messages
 import json
+from django.conf import settings
+from django.core.mail import send_mail
+
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 
 class ProductListView(ListView):
     model = Product
     template_name = 'store/product_list.html'
     context_object_name = 'products'
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = Product.objects.all()
+        query = self.request.GET.get('q')
+        color = self.request.GET.get('color')
+        size = self.request.GET.get('size')
+        gender = self.request.GET.get('gender')
+        min_price = self.request.GET.get('min_price')
+        max_price = self.request.GET.get('max_price')
+
+        if query:
+            queryset = queryset.filter(name__icontains=query)
+        if color:
+            queryset = queryset.filter(variants__color__name=color)
+        if size:
+            queryset = queryset.filter(variants__size__value=size)
+        if gender:
+            queryset = queryset.filter(gender=gender)
+        if min_price:
+            queryset = queryset.filter(base_price__gte=min_price)
+        if max_price:
+            queryset = queryset.filter(base_price__lte=max_price)
+
+        return queryset.distinct()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['colors'] = Color.objects.all()
+        context['sizes'] = Size.objects.all()
+        context['genders'] = Product.GENDER_CHOICES
+        context['query'] = self.request.GET.get('q', '')
+        return context
+
 
 class ProductDetailView(DetailView):
     model = Product
@@ -317,7 +361,28 @@ class PayOrderView(LoginRequiredMixin, View):
             order.payment = payment
             order.status = "Pagado"
             order.save()
+
+            self.send_payment_email(order)
+
         return redirect('order_list')
+
+    def send_payment_email(self, order):
+        subject = 'Confirmación de pago'
+        message = (
+            f'Hola {order.user.first_name},\n\n'
+            f'Tu orden con ID {order.id} ha sido procesada correctamente.\n'
+            f'Transacción: {order.payment.transaction_id}\n'
+            f'Total pagado: ${order.payment.amount:.2f}\n\n'
+            'Gracias por tu compra.'
+        )
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [order.user.email]
+
+        try:
+            send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+            print(f"Correo enviado a {recipient_list[0]}")
+        except Exception as e:
+            print(f"Error al enviar el correo: {e}")
 
 class OrderListView(LoginRequiredMixin, TemplateView):
     template_name = 'store/order_list.html'
@@ -379,3 +444,84 @@ class DeleteReviewView(LoginRequiredMixin, DeleteView):
     
     def get_success_url(self):
         return reverse('product_detail', kwargs={'pk': self.object.product.id})
+
+
+@method_decorator(login_required, name='dispatch')
+class GenerateOrderPdfView(View):
+    def get(self, request, pk, *args, **kwargs):
+        
+        order = get_object_or_404(Order, pk=pk, user=request.user)
+
+        # Crear el response para PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="orden_{order.id}.pdf"'
+
+        # Crear documento PDF
+        pdf = SimpleDocTemplate(response, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+
+        # Título de la orden
+        title_style = ParagraphStyle(
+            name='TitleStyle',
+            fontSize=18,
+            leading=22,
+            spaceAfter=10,
+            fontName='Helvetica-Bold'
+        )
+        elements.append(Paragraph(f"Orden #{order.id}", title_style))
+
+        # Fecha, Estado y Dirección de envío
+        details = f"""
+        <strong>Fecha:</strong> {order.order_date.strftime('%d/%m/%Y')}<br/>
+        <strong>Estado:</strong> {order.status}<br/>
+        <strong>Dirección de envío:</strong> {order.shipping_address if order.shipping_address else '-'}
+        """
+        elements.append(Paragraph(details, styles['Normal']))
+
+        # Espacio después de los detalles
+        elements.append(Paragraph("<br/><br/>", styles['Normal']))
+
+        # Título de productos
+        elements.append(Paragraph("<strong>Productos:</strong>", styles['Normal']))
+
+        # Definir datos de la tabla
+        data = [['Producto', 'Cantidad', 'Precio Unitario', 'Subtotal']]
+        for item in order.items.all():
+            product = item.item.product
+            subtotal = item.purchase_price * item.quantity
+            data.append([
+                product.name,
+                str(item.quantity),
+                f"${item.purchase_price:,.2f}",
+                f"${subtotal:,.2f}"
+            ])
+
+        # Estilo de la tabla
+        table = Table(data, colWidths=[150, 80, 100, 100])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.black),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+
+        elements.append(table)
+
+        # Total de la orden
+        total_style = ParagraphStyle(
+            name='TotalStyle',
+            fontSize=14,
+            leading=16,
+            spaceBefore=15,
+            fontName='Helvetica-Bold'
+        )
+        elements.append(Paragraph(f"Total: ${order.total:,.2f}", total_style))
+
+        # Crear el PDF
+        pdf.build(elements)
+
+        return response

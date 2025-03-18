@@ -4,7 +4,7 @@ from .views import (
     ProductListView, UserRegistrationView, AddWishView, RemoveWishView, WishListView,
     AddToCartView, RemoveFromCartView, CartDetailView, CreateOrderView, CancelOrderView,
     OrderListView, PayOrderView, OrderDetailView, ProductDetailView,
-    CreateReviewView, UpdateReviewView, DeleteReviewView
+    CreateReviewView, UpdateReviewView, DeleteReviewView, GenerateOrderPdfView
 )
 
 urlpatterns = [
@@ -27,4 +27,5 @@ urlpatterns = [
     path('wish_list/', WishListView.as_view(), name='wish_list'),
     path('wish_list/add/<int:product_id>/', AddWishView.as_view(), name='add_wish'),
     path('wish_list/remove/<int:product_id>/', RemoveWishView.as_view(), name='remove_wish'),
+    path('order/<int:pk>/pdf/', GenerateOrderPdfView.as_view(), name='order_pdf'),
 ]

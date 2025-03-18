@@ -4,7 +4,64 @@
 {% block title %}Productos Disponibles{% endblock %}
 
 {% block content %}
+
 <div class="container mt-4">
+
+    <form method="GET" action="{% url 'product_list' %}" class="mb-4">
+        <!-- Búsqueda -->
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" name="q" placeholder="Buscar productos..." value="{{ request.GET.q }}">
+            <button class="btn btn-primary" type="submit">Buscar</button>
+        </div>
+
+        <!-- Filtros compactos -->
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+            <!-- Color -->
+            <select name="color" id="color" class="form-select" style="width: auto;">
+                <option value="">Color</option>
+                {% for color in colors %}
+                    <option value="{{ color.name }}" {% if request.GET.color == color.name %}selected{% endif %}>
+                        {{ color.name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <!-- Talla -->
+            <select name="size" id="size" class="form-select" style="width: auto;">
+                <option value="">Talla</option>
+                {% for size in sizes %}
+                    <option value="{{ size.value }}" {% if request.GET.size == size.value %}selected{% endif %}>
+                        {{ size.value }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <!-- Género -->
+            <select name="gender" id="gender" class="form-select" style="width: auto;">
+                <option value="">Género</option>
+                {% for value, label in genders %}
+                    <option value="{{ value }}" {% if request.GET.gender == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <!-- Precio mínimo -->
+            <input type="number" name="min_price" id="min_price" class="form-control" placeholder="Min $" 
+                   value="{{ request.GET.min_price }}" style="max-width: 120px;">
+
+            <!-- Precio máximo -->
+            <input type="number" name="max_price" id="max_price" class="form-control" placeholder="Max $"
+                   value="{{ request.GET.max_price }}" style="max-width: 120px;">
+
+            <!-- Botón de Filtrar -->
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            
+            <!-- Botón de Limpiar -->
+            <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">Limpiar</a>
+        </div>
+    </form>
+
     <h1 class="mb-4">Productos Disponibles</h1>
     <div class="row">
         {% for product in products %}
