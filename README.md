@@ -48,7 +48,7 @@ Este proyecto es una aplicación web construida con Django para gestionar una ti
    ```
 
    **Configuración del Correo Electrónico**
-  Para enviar correos (por ejemplo, confirmaciones de pago), este proyecto utiliza Gmail. Sigue estos pasos para configurarlo correctamente:
+     Para enviar correos (por ejemplo, confirmaciones de pago), este proyecto utiliza Gmail. Sigue estos pasos para configurarlo correctamente:
 
     4.1. **Habilitar la verificación en dos pasos en tu cuenta de Google:**  
       Si aún no lo has hecho, activa la verificación en dos pasos desde la configuración de seguridad de tu cuenta de Google.
@@ -217,6 +217,6 @@ Tienda de Ropa/
 ## 📌 Notas Adicionales
 
 - Para más información, visita:  
-  [https://github.com/restreh/ST0261-TEIS-Proyecto](https://github.com/restreh/ST0261-TEIS-Proyecto) 
+  [https://github.com/restreh/ST0261-TEIS-Proyecto](https://github.com/restreh/ST0261-TEIS-Proyecto/wiki) 
 
 ---
