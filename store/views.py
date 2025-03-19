@@ -1,26 +1,34 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, get_object_or_404
-from django.views import View
-from django.views.generic import ListView, TemplateView, DetailView
-from django.views.generic.edit import FormView, CreateView, UpdateView, DeleteView
-from django.http import HttpResponse
-from .models import Order, OrderItem, Payment, Product, ProductVariant, ProductReview, Color, Size
-from .forms import RegistrationForm, ProductReviewForm
-from django.urls import reverse, reverse_lazy
-from django.utils import timezone
-from django.utils.decorators import method_decorator
+import json
 import uuid
 from decimal import Decimal
-from django.contrib import messages
-import json
-from django.conf import settings
-from django.core.mail import send_mail
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.mail import send_mail
+from django.http import HttpResponse
+from django.shortcuts import redirect, get_object_or_404
+from django.urls import reverse, reverse_lazy
+from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.generic import ListView, TemplateView, DetailView
+from django.views.generic.edit import FormView, CreateView, UpdateView, DeleteView
+
+from .forms import RegistrationForm, ProductReviewForm
+from .models import (
+    Order, OrderItem, Payment, Product, ProductVariant, ProductReview, Color, Size
+)
+
+# ============================================================================
+# Vistas para Productos
+# ============================================================================
 
 class ProductListView(ListView):
     model = Product
@@ -71,6 +79,7 @@ class ProductDetailView(DetailView):
         product = self.get_object()
         all_variants = product.variants.all()
 
+        # Construir mapa de colores: { color_id: { "image_url": ..., "price": ..., "color_name": ... } }
         color_map = {}
         for variant in all_variants:
             if variant.color:
@@ -90,7 +99,7 @@ class ProductDetailView(DetailView):
                         "color_name": variant.color.name,
                     }
 
-
+        # Construir mapa de variantes: { color_id: { size_id: { 'variant_id': ..., 'image_url': ..., 'price': ..., 'size_value': ... } } }
         variant_map = {}
         for variant in all_variants:
             color_id = variant.color.id if variant.color else 0
@@ -115,7 +124,6 @@ class ProductDetailView(DetailView):
                 'price': str(final_price),
                 'size_value': variant.size.value if variant.size else "N/A"
             }
-
 
         colors = product.variants.exclude(color__isnull=True).values('color__id', 'color__name').distinct()
         sizes = product.variants.exclude(size__isnull=True).values('size__id', 'size__value').distinct()
@@ -145,20 +153,24 @@ class ProductDetailView(DetailView):
         user = self.request.user
         purchased = False
         if user.is_authenticated:
-            purchased = Order.objects.filter(user=user, items__item__product=self.get_object()).exists()
+            purchased = Order.objects.filter(user=user, items__item__product=product).exists()
         context['purchased'] = purchased
         if purchased and user.is_authenticated:
             if self.request.GET.get('clear_form'):
                 context['review_form'] = ProductReviewForm()
             else:
                 try:
-                    review = self.get_object().reviews.get(user=user)
+                    review = product.reviews.get(user=user)
                     context['user_review'] = review
                     context['review_form'] = ProductReviewForm(instance=review)
                 except ProductReview.DoesNotExist:
                     context['review_form'] = ProductReviewForm()
         return context
 
+
+# ============================================================================
+# Vistas relacionadas con el Carrito
+# ============================================================================
 
 class CartMixin:
     """Mixin para obtener y guardar el carrito en la sesión."""
@@ -169,11 +181,11 @@ class CartMixin:
         request.session['cart'] = cart
         request.session.modified = True
 
+
 class AddToCartView(View, CartMixin):
     def post(self, request, product_id):
         variant_id = request.POST.get('variant_id')
         quantity = request.POST.get('quantity', 1)
-
         try:
             quantity = int(quantity)
         except ValueError:
@@ -198,8 +210,8 @@ class AddToCartView(View, CartMixin):
         self.save_cart(request, cart)
         return redirect('cart_detail')
 
-class RemoveFromCartView(View, CartMixin):
 
+class RemoveFromCartView(View, CartMixin):
     def post(self, request, product_id):
         product = get_object_or_404(Product, id=product_id)
         try:
@@ -216,6 +228,7 @@ class RemoveFromCartView(View, CartMixin):
                 cart[key]['quantity'] -= quantity
             self.save_cart(request, cart)
         return redirect('cart_detail')
+
 
 class CartDetailView(TemplateView, CartMixin):
     template_name = 'store/cart_detail.html'
@@ -258,6 +271,10 @@ class CartDetailView(TemplateView, CartMixin):
         return context
 
 
+# ============================================================================
+# Vistas de Autenticación y Registro
+# ============================================================================
+
 class UserRegistrationView(FormView):
     template_name = 'store/registration.html'
     form_class = RegistrationForm
@@ -265,7 +282,6 @@ class UserRegistrationView(FormView):
 
     def form_valid(self, form):
         user = form.save()
-        
         profile = user.profile
         profile.shipping_address = form.cleaned_data.get('shipping_address')
         profile.phone_number = form.cleaned_data.get('phone_number')
@@ -273,24 +289,27 @@ class UserRegistrationView(FormView):
         return super().form_valid(form)
 
 
-class AddWishView(LoginRequiredMixin, View):
+# ============================================================================
+# Vistas para Favoritos
+# ============================================================================
 
+class AddWishView(LoginRequiredMixin, View):
     def post(self, request, product_id):
         product = get_object_or_404(Product, id=product_id)
         profile = request.user.profile
         profile.wish_list.add(product)
         return redirect('wish_list')
 
-class RemoveWishView(LoginRequiredMixin, View):
 
+class RemoveWishView(LoginRequiredMixin, View):
     def post(self, request, product_id):
         product = get_object_or_404(Product, id=product_id)
         profile = request.user.profile
         profile.wish_list.remove(product)
         return redirect('wish_list')
 
-class WishListView(LoginRequiredMixin, TemplateView):
 
+class WishListView(LoginRequiredMixin, TemplateView):
     template_name = 'store/wish_list.html'
 
     def get_context_data(self, **kwargs):
@@ -298,6 +317,10 @@ class WishListView(LoginRequiredMixin, TemplateView):
         context['wish_list'] = self.request.user.profile.wish_list.all()
         return context
 
+
+# ============================================================================
+# Vistas de Órdenes de Compra
+# ============================================================================
 
 class CreateOrderView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
@@ -320,7 +343,6 @@ class CreateOrderView(LoginRequiredMixin, View):
 
         for key, details in cart.items():
             if key.startswith("variant-"):
-                # Extraer el ID de la variante
                 variant_id = key.split("-")[1]
                 variant = get_object_or_404(ProductVariant, id=variant_id)
             else:
@@ -335,6 +357,7 @@ class CreateOrderView(LoginRequiredMixin, View):
         request.session['cart'] = {}
         return redirect('order_list')
 
+
 class CancelOrderView(LoginRequiredMixin, View):
     def post(self, request, order_id, *args, **kwargs):
         order = get_object_or_404(Order, id=order_id, user=request.user)
@@ -347,6 +370,7 @@ class CancelOrderView(LoginRequiredMixin, View):
             order.save()
             messages.success(request, "Orden cancelada correctamente.")
         return redirect('order_list')
+
 
 class PayOrderView(LoginRequiredMixin, View):
     def post(self, request, order_id, *args, **kwargs):
@@ -361,9 +385,7 @@ class PayOrderView(LoginRequiredMixin, View):
             order.payment = payment
             order.status = "Pagado"
             order.save()
-
             self.send_payment_email(order)
-
         return redirect('order_list')
 
     def send_payment_email(self, order):
@@ -372,17 +394,17 @@ class PayOrderView(LoginRequiredMixin, View):
             f'Hola {order.user.first_name},\n\n'
             f'Tu orden con ID {order.id} ha sido procesada correctamente.\n'
             f'Transacción: {order.payment.transaction_id}\n'
-            f'Total pagado: ${order.payment.amount:.2f}\n\n'
+            f'Total pagado: ${order.payment.amount:,.2f}\n\n'
             'Gracias por tu compra.'
         )
         from_email = settings.EMAIL_HOST_USER
         recipient_list = [order.user.email]
-
         try:
             send_mail(subject, message, from_email, recipient_list, fail_silently=False)
             print(f"Correo enviado a {recipient_list[0]}")
         except Exception as e:
             print(f"Error al enviar el correo: {e}")
+
 
 class OrderListView(LoginRequiredMixin, TemplateView):
     template_name = 'store/order_list.html'
@@ -392,15 +414,16 @@ class OrderListView(LoginRequiredMixin, TemplateView):
         orders = Order.objects.filter(user=self.request.user).order_by('-order_date')
         context['orders'] = orders
         return context
-    
+
+
 class OrderDetailView(LoginRequiredMixin, DetailView):
     model = Order
     template_name = 'store/order_detail.html'
     context_object_name = 'order'
-    
+
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user)
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         order = self.get_object()
@@ -415,33 +438,39 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
+# ============================================================================
+# Vistas de Reseñas
+# ============================================================================
+
 class CreateReviewView(LoginRequiredMixin, CreateView):
     model = ProductReview
     form_class = ProductReviewForm
     template_name = 'store/review_form.html'
-    
+
     def form_valid(self, form):
         product = get_object_or_404(Product, id=self.kwargs['product_id'])
         form.instance.product = product
         form.instance.user = self.request.user
         return super().form_valid(form)
-    
+
     def get_success_url(self):
         url = reverse('product_detail', kwargs={'pk': self.kwargs['product_id']})
         return f"{url}?clear_form=1"
+
 
 class UpdateReviewView(LoginRequiredMixin, UpdateView):
     model = ProductReview
     form_class = ProductReviewForm
     template_name = 'store/review_form.html'
-    
+
     def get_success_url(self):
         return reverse('product_detail', kwargs={'pk': self.object.product.id})
+
 
 class DeleteReviewView(LoginRequiredMixin, DeleteView):
     model = ProductReview
     template_name = 'store/review_confirm_delete.html'
-    
+
     def get_success_url(self):
         return reverse('product_detail', kwargs={'pk': self.object.product.id})
 
@@ -449,19 +478,15 @@ class DeleteReviewView(LoginRequiredMixin, DeleteView):
 @method_decorator(login_required, name='dispatch')
 class GenerateOrderPdfView(View):
     def get(self, request, pk, *args, **kwargs):
-        
         order = get_object_or_404(Order, pk=pk, user=request.user)
 
-        # Crear el response para PDF
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="orden_{order.id}.pdf"'
 
-        # Crear documento PDF
         pdf = SimpleDocTemplate(response, pagesize=letter)
         elements = []
         styles = getSampleStyleSheet()
 
-        # Título de la orden
         title_style = ParagraphStyle(
             name='TitleStyle',
             fontSize=18,
@@ -471,7 +496,6 @@ class GenerateOrderPdfView(View):
         )
         elements.append(Paragraph(f"Orden #{order.id}", title_style))
 
-        # Fecha, Estado y Dirección de envío
         details = f"""
         <strong>Fecha:</strong> {order.order_date.strftime('%d/%m/%Y')}<br/>
         <strong>Estado:</strong> {order.status}<br/>
@@ -479,13 +503,10 @@ class GenerateOrderPdfView(View):
         """
         elements.append(Paragraph(details, styles['Normal']))
 
-        # Espacio después de los detalles
         elements.append(Paragraph("<br/><br/>", styles['Normal']))
 
-        # Título de productos
         elements.append(Paragraph("<strong>Productos:</strong>", styles['Normal']))
 
-        # Definir datos de la tabla
         data = [['Producto', 'Cantidad', 'Precio Unitario', 'Subtotal']]
         for item in order.items.all():
             product = item.item.product
@@ -497,7 +518,6 @@ class GenerateOrderPdfView(View):
                 f"${subtotal:,.2f}"
             ])
 
-        # Estilo de la tabla
         table = Table(data, colWidths=[150, 80, 100, 100])
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.black),
@@ -511,7 +531,6 @@ class GenerateOrderPdfView(View):
 
         elements.append(table)
 
-        # Total de la orden
         total_style = ParagraphStyle(
             name='TotalStyle',
             fontSize=14,
@@ -521,7 +540,6 @@ class GenerateOrderPdfView(View):
         )
         elements.append(Paragraph(f"Total: ${order.total:,.2f}", total_style))
 
-        # Crear el PDF
         pdf.build(elements)
 
         return response

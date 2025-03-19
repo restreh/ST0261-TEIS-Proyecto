@@ -15,15 +15,15 @@ __pycache__/
 *.py[cod]
 *.so
 *.egg-info/
+*.pyc
+
 *.log
 *.pot
-*.pyc
+
 *.sqlite3
 
 media/
 staticfiles/
-
-
 
 .DS_Store
 Thumbs.db

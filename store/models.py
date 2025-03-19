@@ -1,12 +1,15 @@
-from django.db import models
+import uuid
+from decimal import Decimal
+
+from pydantic import ValidationError
+
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.text import slugify
-from pydantic import ValidationError
-import uuid
-from decimal import Decimal
-from django.conf import settings
+
 
 class Color(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -18,12 +21,13 @@ class Color(models.Model):
         verbose_name = "Color"
         verbose_name_plural = "Colores"
 
+
 class Size(models.Model):
     CLOTHING = 'clothing'
     SHOE = 'shoe'
     SIZE_TYPES = [
-                (CLOTHING, 'Ropa'),
-                (SHOE, 'Calzado'),
+        (CLOTHING, 'Ropa'),
+        (SHOE, 'Calzado'),
     ]
     
     size_type = models.CharField(max_length=10, choices=SIZE_TYPES, verbose_name="Tipo de talla")
@@ -37,14 +41,15 @@ class Size(models.Model):
         verbose_name = "Talla"
         verbose_name_plural = "Tallas"
 
+
 class Product(models.Model):
     MALE = 'M'
     FEMALE = 'F'
     UNISEX = 'U'
     GENDER_CHOICES = [
-                    (MALE, 'Masculino'),
-                    (FEMALE, 'Femenino'),
-                    (UNISEX, 'Unisex'),
+        (MALE, 'Masculino'),
+        (FEMALE, 'Femenino'),
+        (UNISEX, 'Unisex'),
     ]
     
     name = models.CharField(max_length=255, verbose_name="Nombre")
@@ -78,6 +83,7 @@ class Product(models.Model):
         verbose_name = "Producto"
         verbose_name_plural = "Productos"
 
+
 class ProductVariant(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants', verbose_name="Producto")
     sku = models.CharField(max_length=50, unique=True, blank=True, verbose_name="SKU")
@@ -107,6 +113,7 @@ class ProductVariant(models.Model):
         verbose_name = "Variante de Producto"
         verbose_name_plural = "Variantes de Producto"
 
+
 class ProductImage(models.Model):
     variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, related_name='images', verbose_name="Variante")
     image = models.ImageField(upload_to='product_images/', verbose_name="Imagen")
@@ -129,6 +136,7 @@ class Profile(models.Model):
     def __str__(self):
         return f"Perfil de {self.user.username}"
 
+
 @receiver(post_save, sender=User)
 def create_or_update_profile(sender, instance, created, **kwargs):
     if created:
@@ -148,6 +156,7 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Pago {self.transaction_id} - {self.status}"
+
 
 class Order(models.Model):
     STATUS_CHOICES = (
@@ -171,6 +180,7 @@ class Order(models.Model):
         verbose_name = "Orden de Compra"
         verbose_name_plural = "Órdenes de Compra"
 
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     item = models.ForeignKey('ProductVariant', on_delete=models.CASCADE)
@@ -179,7 +189,7 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.item} x {self.quantity}"
-    
+
 
 class ProductReview(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')

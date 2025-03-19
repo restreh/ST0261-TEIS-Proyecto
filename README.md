@@ -1,13 +1,17 @@
 # Tienda de Ropa - Proyecto Django
 
-Este proyecto es una aplicación web construida con Django que permite gestionar productos, variantes de producto, imágenes y stock para una tienda de ropa. Ofrece una interfaz pública para navegar y comprar productos (con carrito y lista de deseos) y un panel de administración para gestionar el contenido y las órdenes de compra.
+Este proyecto es una aplicación web construida con Django para gestionar una tienda de ropa. Permite administrar productos, variantes (colores, tallas), imágenes, stock y órdenes de compra. La aplicación ofrece una interfaz pública para navegar, buscar y comprar productos (con carrito, lista de deseos y filtrado avanzado), y un panel de administración para gestionar el contenido y las órdenes.
+
+---
 
 ## 🛠️ Requisitos
 
 - **Python 3.10** (o superior)  
 - **Django 4.x**  
-- **Pip** (gestor de paquetes de Python)  
-- **Virtualenv** (opcional, pero recomendado)
+- **Pip**  
+- **Virtualenv** (recomendado)  
+
+---
 
 ## 🛠️ Instalación
 
@@ -32,11 +36,38 @@ Este proyecto es una aplicación web construida con Django que permite gestionar
    ```
 
 4. **Configurar variables de entorno**  
-   Crea un archivo `.env` en la raíz del proyecto con información como:
-   ```
+   Crea un archivo `.env` en la raíz del proyecto con la siguiente información (y otros datos sensibles necesarios):
+   ```env
    DEBUG=True
    SECRET_KEY=tu_clave_secreta
+   EMAIL_HOST=tu_host_de_correo
+   EMAIL_PORT=587
+   EMAIL_USE_TLS=True
+   EMAIL_HOST_USER=tu_email
+   EMAIL_HOST_PASSWORD=tu_contraseña
    ```
+
+   **Configuración del Correo Electrónico**
+  Para enviar correos (por ejemplo, confirmaciones de pago), este proyecto utiliza Gmail. Sigue estos pasos para configurarlo correctamente:
+
+    4.1. **Habilitar la verificación en dos pasos en tu cuenta de Google:**  
+      Si aún no lo has hecho, activa la verificación en dos pasos desde la configuración de seguridad de tu cuenta de Google.
+
+    4.2. **Generar una contraseña de aplicación:**  
+      - Accede a la sección **"Contraseñas de aplicaciones"** en tu cuenta de Google.  
+      - Selecciona "Otra (nombre personalizado)" y escribe un nombre (por ejemplo, "Django").  
+      - Google te proporcionará una contraseña de 16 caracteres. Copia esa contraseña.
+
+    4.3. **Configurar las variables de entorno en el archivo `.env`:**  
+      Agrega la siguiente configuración en tu archivo `.env` (reemplazando los valores por los correspondientes a tu cuenta):
+      ```env
+      EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+      EMAIL_HOST=smtp.gmail.com
+      EMAIL_PORT=587
+      EMAIL_USE_TLS=True
+      EMAIL_HOST_USER=tu_email@gmail.com
+      EMAIL_HOST_PASSWORD=tu_contraseña_de_aplicación
+
 
 5. **Aplicar migraciones**  
    ```bash
@@ -53,7 +84,7 @@ Este proyecto es una aplicación web construida con Django que permite gestionar
    ```bash
    python manage.py runserver
    ```
-   Visita [http://127.0.0.1:8000](http://127.0.0.1:8000) para ver la aplicación en funcionamiento.
+   La aplicación estará disponible en [http://127.0.0.1:8000](http://127.0.0.1:8000).
 
 ---
 
@@ -61,7 +92,7 @@ Este proyecto es una aplicación web construida con Django que permite gestionar
 
 ```
 Tienda de Ropa/
-├── st0261_project/ 
+├── st0261_project/
 │   ├── __init__.py
 │   ├── settings.py
 │   ├── urls.py
@@ -79,11 +110,17 @@ Tienda de Ropa/
 │       ├── base.html
 │       ├── cart_detail.html
 │       ├── login.html
+│       ├── order_detail.html
 │       ├── order_list.html
+│       ├── product_detail.html
 │       ├── product_list.html
 │       ├── registration.html
-│       ├── wish_list.html
-│       └── ...
+│       ├── review_confirm_delete.html
+│       ├── review_form.html
+│       └── wish_list.html
+├── static/
+│   └── js/
+│       └── product_detail.js
 ├── media/
 ├── manage.py
 ├── .env
@@ -92,10 +129,11 @@ Tienda de Ropa/
 └── README.md
 ```
 
-- **st0261_project/**: Configuración principal de Django.  
-- **store/**: Contiene la lógica de la app (modelos, vistas, formularios, admin, etc.).  
-- **templates/store/**: Plantillas HTML para las distintas secciones de la tienda.  
-- **media/**: Carpeta para las imágenes de los productos.  
+- **st0261_project/**: Configuración principal de Django.
+- **store/**: Lógica de la aplicación (modelos, vistas, formularios, administración, etc.).
+- **templates/store/**: Plantillas HTML para la interfaz pública y el panel de administración.
+- **static/**: Archivos estáticos (CSS, JavaScript, imágenes de interfaz).  
+- **media/**: Archivos subidos por usuarios (imágenes de productos).
 
 ---
 
@@ -103,72 +141,81 @@ Tienda de Ropa/
 
 ### 1. Registro e Inicio de Sesión
 
-- **Registrarse**  
-  Ve a la página de registro o haz clic en “Registrarse” en la barra de navegación. Completa el formulario y envíalo.  
-- **Iniciar Sesión**  
-  Haz clic en “Iniciar sesión” en la barra de navegación e ingresa tus credenciales.  
-- **Cerrar Sesión**  
-  Si ya iniciaste sesión, verás un enlace de “Cerrar sesión” que te permite salir.
+- **Registro:**  
+  El usuario puede registrarse a través de un formulario. Los datos sensibles se gestionan mediante variables de entorno y se crea un perfil asociado automáticamente.
 
-### 2. Carrito de Compras
-
-- **Agregar al Carrito**  
-  Desde la lista de productos, elige la variante (si aplica), la cantidad y haz clic en “Añadir al carrito”.  
-- **Ver Carrito**  
-  Haz clic en “Carrito” en la barra de navegación. Verás los productos agregados, su cantidad y el subtotal.  
-- **Eliminar del Carrito**  
-  Dentro del carrito, puedes ajustar la cantidad o eliminar el producto por completo.  
-- **Comprar**  
-  Si iniciaste sesión, verás un botón de “Comprar” para generar la orden de compra.
-
-### 3. Lista de Deseados (Favoritos)
-
-- **Agregar a Favoritos**  
-  Inicia sesión. Junto al botón de “Añadir al carrito” verás un icono de corazón para añadir el producto a tu lista de deseados.  
-- **Ver Favoritos**  
-  En la barra de navegación aparecerá “Favoritos”. Allí verás todos los productos que marcaste como deseados.  
-- **Eliminar de Favoritos**  
-  En la lista de deseados, cada producto tendrá un botón para quitarlo.
-
-### 4. Órdenes de Compra
-
-- **Mis Compras**  
-  Si iniciaste sesión, verás “Mis Compras” en la barra de navegación. Allí se listan todas tus órdenes con fecha, total y estado.  
-- **Pagar**  
-  Si la orden está pendiente, puedes hacer clic en “Pagar ahora” para simular el pago.  
-- **Cancelar**  
-  Podrás cancelar la orden si no ha sido marcada como “Enviada” o “Entregada”.  
-
-### 5. Panel de Administración
-
-- **Acceso**  
-  Ingresa a [http://127.0.0.1:8000/admin](http://127.0.0.1:8000/admin) y usa tus credenciales de superusuario.  
-- **Gestión de Productos**  
-  Crea productos, variantes (color, talla, stock) e imágenes.  
-- **Gestión de Órdenes de Compra**  
-  Verás todas las órdenes, podrás marcarlas como “Enviadas” (descontando stock) o “Entregadas”, siempre que no estén canceladas.
+- **Inicio/Cierre de Sesión:**  
+  La aplicación incluye rutas y vistas para iniciar y cerrar sesión. La barra de navegación se actualiza según el estado de autenticación.
 
 ---
 
-## 🧩 Cómo Agregar un Producto
+### 2. Navegación de Productos
 
-1. **Acceder al Admin**  
-   Ingresa a [http://127.0.0.1:8000/admin](http://127.0.0.1:8000/admin) e inicia sesión.  
-2. **Crear Producto**  
-   Ve a **Productos** → **Agregar producto** y llena los campos.  
-3. **Añadir Variantes**  
-   Indica color, talla, stock, precio especial, etc.  
-4. **Subir Imágenes**  
-   Sube las imágenes que desees para cada variante.  
-5. **Guardar**  
-   Al guardar, verás tu producto en la lista.
+- **Listado de Productos:**  
+  La página principal muestra tarjetas de productos con imagen y el precio.  
+  - Incluye paginación y filtros (búsqueda, color, talla, género, rango de precios).
+
+- **Detalle de Producto:**  
+  La vista de detalle muestra:
+  - Imagen principal.
+  - Información del producto (descripción, materiales, guía de cuidado).
+  - Sistema de selección de variante:  
+    El usuario puede seleccionar color y talla. Al seleccionar solo color, se actualiza la imagen y el precio (con un mensaje de error si la talla elegida no está disponible).  
+  - Formulario para agregar al carrito.
 
 ---
 
-## 📌 Notas Finales
+### 3. Carrito de Compras
 
-- Para cualquier usuario creado antes de la implementación del perfil, asegúrate de asignarle un perfil.  
-- Configura **MEDIA_URL** y **MEDIA_ROOT** en `settings.py` para mostrar imágenes de productos.  
+- **Agregar Productos:**  
+  Desde el listado o el detalle, el usuario puede agregar productos (o variantes) al carrito, especificando la cantidad.  
+- **Visualizar y Editar Carrito:**  
+  La vista de carrito muestra cada producto (con detalles de la variante, si aplica) en tarjetas uniformes, junto con el precio unitario y subtotal.  
+- **Eliminar Productos:**  
+  Permite ajustar la cantidad o eliminar productos por completo.
+- **Generar Orden de Compra:**  
+  Una vez revisado el carrito, el usuario puede proceder a comprar y generar una orden.
+
+---
+
+### 4. Lista de Deseados (Favoritos)
+
+- **Agregar y Eliminar Favoritos:**  
+  El usuario autenticado puede marcar productos como favoritos (mediante un icono de corazón) y visualizarlos en una página especial.  
+- **Acceso a Detalle:**  
+  En la lista de favoritos, los productos son clickeables para ver su detalle y, si lo desea, agregarlos al carrito.
+
+---
+
+### 5. Órdenes de Compra
+
+- **Historial de Compras:**  
+  La vista "Mis Compras" muestra las órdenes del usuario, con fecha, total, estado y dirección de envío.  
+- **Pago y Cancelación:**  
+  El usuario puede simular el pago de una orden pendiente y cancelar órdenes siempre que no se encuentren enviadas o entregadas.  
+- **Generación de PDF:**  
+  El usuario puede generar un PDF de la orden para impresión o archivo.
+
+---
+
+### 6. Panel de Administración
+
+- **Gestión de Productos y Variantes:**  
+  A través del panel de administración (accesible en `/admin`), se pueden crear y editar productos, variantes (colores, tallas) e imágenes.  
+- **Gestión de Órdenes:**  
+  El administrador puede ver y actualizar el estado de las órdenes (marcarlas como enviadas o entregadas) y, en el caso de marcar como enviado, descontar el stock de los productos.
+
+---
+
+### 7. Reseñas de Productos
+
+- **Crear, Editar y Eliminar Reseñas:**  
+  Solo los usuarios que han comprado el producto pueden dejar reseñas. Se proveen vistas para crear, editar y eliminar reseñas, y se muestran en la vista de detalle del producto.
+
+---
+
+## 📌 Notas Adicionales
+
 - Para más información, visita:  
   [https://github.com/restreh/ST0261-TEIS-Proyecto](https://github.com/restreh/ST0261-TEIS-Proyecto) 
 

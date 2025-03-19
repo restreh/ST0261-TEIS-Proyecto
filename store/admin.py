@@ -1,12 +1,17 @@
 import nested_admin
+
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+
 from .models import (
     Product, ProductVariant, Color, Size, ProductImage,
     Order, OrderItem, Payment
 )
 
+# --------------------------------------------------------------------
+# Inlines para imágenes y variantes usando nested_admin
+# --------------------------------------------------------------------
 class ProductImageInline(nested_admin.NestedTabularInline):
     model = ProductImage
     extra = 1
@@ -22,6 +27,9 @@ class ProductVariantInline(nested_admin.NestedStackedInline):
     verbose_name_plural = "Variantes"
     inlines = [ProductImageInline]
 
+# --------------------------------------------------------------------
+# Registro y configuración del admin para productos y variantes
+# --------------------------------------------------------------------
 @admin.register(Product)
 class ProductAdmin(nested_admin.NestedModelAdmin):
     list_display = ('name', 'gender', 'base_price', 'created_at')
@@ -48,7 +56,9 @@ class SizeAdmin(admin.ModelAdmin):
     list_filter = ('size_type',)
     search_fields = ('value',)
 
-
+# --------------------------------------------------------------------
+# Configuración del admin para órdenes y sus items
+# --------------------------------------------------------------------
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
@@ -64,9 +74,14 @@ class OrderAdmin(admin.ModelAdmin):
     fields = ('user', 'status', 'shipping_address', 'payment', 'enviado', 'entregado')
     
     def save_model(self, request, obj, form, change):
-        if obj.status == 'Cancelado' or obj.status == 'Pendiente':
+        # Evitar cambios en estados para órdenes Canceladas o Pendientes de pago
+        if obj.status in ['Cancelado', 'Pendiente']:
             if 'enviado' in form.changed_data or 'entregado' in form.changed_data:
-                self.message_user(request, _("No se pueden actualizar los estados de una orden cancelada o pendiente de pago."), messages.ERROR)
+                self.message_user(
+                    request, 
+                    _("No se pueden actualizar los estados de una orden cancelada o pendiente de pago."), 
+                    messages.ERROR
+                )
                 return
         
         if change:
