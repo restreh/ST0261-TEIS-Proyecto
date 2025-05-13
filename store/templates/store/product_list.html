@@ -1,7 +1,8 @@
 {% extends 'store/base.html' %}
 {% load static %}
 {% load humanize %}
-{% block title %}Productos Disponibles{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Productos Disponibles" %}{% endblock %}
 
 {% block content %}
 
@@ -10,15 +11,15 @@
     <form method="GET" action="{% url 'product_list' %}" class="mb-4">
         <!-- Búsqueda -->
         <div class="input-group mb-3">
-            <input type="text" class="form-control" name="q" placeholder="Buscar productos..." value="{{ request.GET.q }}">
-            <button class="btn btn-primary" type="submit">Buscar</button>
+            <input type="text" class="form-control" name="q" placeholder="{% trans 'Buscar productos...' %}" value="{{ request.GET.q }}">
+            <button class="btn btn-primary" type="submit">{% trans "Buscar" %}</button>
         </div>
 
         <!-- Filtros compactos -->
         <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
             <!-- Color -->
             <select name="color" id="color" class="form-select" style="width: auto;">
-                <option value="">Color</option>
+                <option value="">{% trans "Color" %}</option>
                 {% for color in colors %}
                     <option value="{{ color.name }}" {% if request.GET.color == color.name %}selected{% endif %}>
                         {{ color.name }}
@@ -28,7 +29,7 @@
 
             <!-- Talla -->
             <select name="size" id="size" class="form-select" style="width: auto;">
-                <option value="">Talla</option>
+                <option value="">{% trans "Talla" %}</option>
                 {% for size in sizes %}
                     <option value="{{ size.value }}" {% if request.GET.size == size.value %}selected{% endif %}>
                         {{ size.value }}
@@ -38,7 +39,7 @@
 
             <!-- Género -->
             <select name="gender" id="gender" class="form-select" style="width: auto;">
-                <option value="">Género</option>
+                <option value="">{% trans "Género" %}</option>
                 {% for value, label in genders %}
                     <option value="{{ value }}" {% if request.GET.gender == value %}selected{% endif %}>
                         {{ label }}
@@ -47,22 +48,22 @@
             </select>
 
             <!-- Precio mínimo -->
-            <input type="number" name="min_price" id="min_price" class="form-control" placeholder="Min $" 
+            <input type="number" name="min_price" id="min_price" class="form-control" placeholder="{% trans 'Min $' %}" 
                    value="{{ request.GET.min_price }}" style="max-width: 120px;">
 
             <!-- Precio máximo -->
-            <input type="number" name="max_price" id="max_price" class="form-control" placeholder="Max $"
+            <input type="number" name="max_price" id="max_price" class="form-control" placeholder="{% trans 'Max $' %}"
                    value="{{ request.GET.max_price }}" style="max-width: 120px;">
 
             <!-- Botón de Filtrar -->
-            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <button type="submit" class="btn btn-primary">{% trans "Filtrar" %}</button>
             
             <!-- Botón de Limpiar -->
-            <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">Limpiar</a>
+            <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">{% trans "Limpiar" %}</a>
         </div>
     </form>
 
-    <h1 class="mb-4">Productos Disponibles</h1>
+    <h1 class="mb-4">{% trans "Productos Disponibles" %}</h1>
     <div class="row">
         {% for product in products %}
         <div class="col-md-4">
@@ -72,7 +73,7 @@
                     <img src="{{ product.get_default_image_url }}" class="card-img-top" alt="{{ product.name }}"
                         style="height: 200px; width: 100%; object-fit: contain;">
                     {% else %}
-                    <img src="#" class="card-img-top" alt="Sin imagen"
+                    <img src="#" class="card-img-top" alt="{% trans 'Sin imagen' %}"
                         style="height: 200px; width: 100%; object-fit: contain;">
                     {% endif %}
                 </a>
@@ -83,14 +84,14 @@
                         </a>
                     </h5>
                     <p class="card-text">{{ product.description|truncatewords:20 }}</p>
-                    <p class="card-text"><strong>Precio:</strong> ${{ product.base_price|floatformat:0|intcomma }}</p>
+                    <p class="card-text"><strong>{% trans "Precio" %}:</strong> ${{ product.base_price|floatformat:0|intcomma }}</p>
                     <div class="mt-auto d-flex justify-content-between align-items-center">
                         <form action="{% url 'add_to_cart' product.id %}" method="post" class="flex-grow-1 me-2">
                             {% csrf_token %}
                             <div class="input-group">
                                 <input type="number" name="quantity" value="1" min="1" class="form-control"
                                     style="max-width: 80px;">
-                                <button class="btn btn-success" type="submit">Añadir al carrito</button>
+                                <button class="btn btn-success" type="submit">{% trans "Añadir al carrito" %}</button>
                             </div>
                         </form>
                         {% if user.is_authenticated %}
@@ -99,7 +100,7 @@
                             <button type="submit"
                                 style="color: #ccc; background: transparent; border: none; font-size: 1.5rem; transition: color 0.3s ease;"
                                 onmouseover="this.style.color='red'" onmouseout="this.style.color='#ccc'"
-                                title="Agregar a Favoritos">
+                                title="{% trans 'Agregar a Favoritos' %}">
                                 &#9829;
                             </button>
                         </form>
@@ -109,7 +110,7 @@
             </div>
         </div>
         {% empty %}
-        <p>No hay productos disponibles.</p>
+        <p>{% trans "No hay productos disponibles." %}</p>
         {% endfor %}
     </div>
 </div>

@@ -1,14 +1,15 @@
 {% extends 'store/base.html' %}
-{% block title %}Eliminar Reseña{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Eliminar Reseña" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Eliminar Reseña</h1>
-    <p>¿Estás seguro de que deseas eliminar esta reseña?</p>
+    <h1>{% trans "Eliminar Reseña" %}</h1>
+    <p>{% trans "¿Estás seguro de que deseas eliminar esta reseña?" %}</p>
     <form method="post">
         {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Eliminar</button>
-        <a href="{% url 'product_detail' object.product.id %}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-danger">{% trans "Eliminar" %}</button>
+        <a href="{% url 'product_detail' object.product.id %}" class="btn btn-secondary">{% trans "Cancelar" %}</a>
     </form>
 </div>
 {% endblock %}

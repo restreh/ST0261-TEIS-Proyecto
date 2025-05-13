@@ -1,53 +1,75 @@
-{% extends 'store/base.html' %}
-{% block title %}Carrito de Compras{% endblock %}
-{% block content %}
+{% extends 'store/base.html' %} {% load i18n %} {% block title %}{% trans
+"Carrito de Compras" %}{% endblock %} {% block content %}
 <div class="container mt-4">
-    <h1>Carrito de Compras</h1>
-    {% if cart_items %}
-    {% for item in cart_items %}
-    <div class="card mb-3">
-        <div class="card-body d-flex">
-            <div class="flex-grow-1">
-                <p><strong>{{ item.product.name }}</strong></p>
-                {% if item.variant %}
-                <p>
-                    {% if item.variant.color %}Color: {{ item.variant.color.name }}{% endif %}
-                </p>
-                <p>
-                    {% if item.variant.size %}Talla: {{ item.variant.size.value }}{% endif %}
-                </p>
-                {% endif %}
-                <p>Cantidad: {{ item.quantity }}</p>
-                <p>Precio unitario: ${{ item.price }}</p>
-                <p>Subtotal: ${{ item.subtotal }}</p>
-                <div>
-                    <form action="{% url 'remove_from_cart' item.product.id %}" method="post" style="display:inline;">
-                        {% csrf_token %}
-                        <input type="number" name="quantity" value="1" min="1" style="width:60px;">
-                        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-                    </form>
-                </div>
-            </div>
-            <div>
-                {% if item.variant and item.variant.images.first %}
-                <img src="{{ item.variant.images.first.image.url }}" alt="{{ item.product.name }}" style="width:150px;">
-                {% else %}
-                <img src="{{ item.product.get_default_image_url }}" alt="{{ item.product.name }}" style="width:150px;">
-                {% endif %}
-            </div>
+  <h1>{% trans "Carrito de Compras" %}</h1>
+  {% if cart_items %} {% for item in cart_items %}
+  <div class="card mb-3">
+    <div class="card-body d-flex">
+      <div class="flex-grow-1">
+        <p><strong>{{ item.product.name }}</strong></p>
+        {% if item.variant %}
+        <p>
+          {% if item.variant.color %}{% trans "Color" %}: {{
+          item.variant.color.name }}{% endif %}
+        </p>
+        <p>
+          {% if item.variant.size %}{% trans "Talla" %}: {{
+          item.variant.size.value }}{% endif %}
+        </p>
+        {% endif %}
+        <p>{% trans "Cantidad" %}: {{ item.quantity }}</p>
+        <p>{% trans "Precio unitario" %}: ${{ item.price }}</p>
+        <p>{% trans "Subtotal" %}: ${{ item.subtotal }}</p>
+        <div>
+          <form
+            action="{% url 'remove_from_cart' item.product.id %}"
+            method="post"
+            style="display: inline"
+          >
+            {% csrf_token %}
+            <input
+              type="number"
+              name="quantity"
+              value="1"
+              min="1"
+              style="width: 60px"
+            />
+            <button type="submit" class="btn btn-danger btn-sm">
+              {% trans "Eliminar" %}
+            </button>
+          </form>
         </div>
+      </div>
+      <div>
+        {% if item.variant and item.variant.images.first %}
+        <img
+          src="{{ item.variant.images.first.image.url }}"
+          alt="{{ item.product.name }}"
+          style="width: 150px"
+        />
+        {% else %}
+        <img
+          src="{{ item.product.get_default_image_url }}"
+          alt="{{ item.product.name }}"
+          style="width: 150px"
+        />
+        {% endif %}
+      </div>
     </div>
-    {% endfor %}
-    <div class="mb-3">
-        <h4>Total: ${{ total }}</h4>
-    </div>
-    <form action="{% url 'create_order' %}" method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-success">Comprar</button>
-    </form>
-    {% else %}
-    <p>No tienes productos en el carrito.</p>
-    {% endif %}
-    <a href="{% url 'product_list' %}" class="btn btn-primary mt-3">Continuar Comprando</a>
+  </div>
+  {% endfor %}
+  <div class="mb-3">
+    <h4>{% trans "Total" %}: ${{ total }}</h4>
+  </div>
+  <form action="{% url 'create_order' %}" method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success">{% trans "Comprar" %}</button>
+  </form>
+  {% else %}
+  <p>{% trans "No tienes productos en el carrito." %}</p>
+  {% endif %}
+  <a href="{% url 'product_list' %}" class="btn btn-primary mt-3"
+    >{% trans "Continuar Comprando" %}</a
+  >
 </div>
 {% endblock %}

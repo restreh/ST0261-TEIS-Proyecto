@@ -1,10 +1,11 @@
 {% extends 'store/base.html' %}
-{% block title %}Registrarse{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Registrarse" %}{% endblock %}
 {% block content %}
-<h1>Registrarse</h1>
+<h1>{% trans "Registrarse" %}</h1>
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Registrarse</button>
+    <button type="submit" class="btn btn-primary">{% trans "Registrarse" %}</button>
 </form>
 {% endblock %}

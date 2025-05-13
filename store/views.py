@@ -1,7 +1,6 @@
 import json
 import uuid
 from decimal import Decimal
-
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -25,6 +24,8 @@ from .forms import RegistrationForm, ProductReviewForm
 from .models import (
     Order, OrderItem, Payment, Product, ProductVariant, ProductReview, Color, Size
 )
+
+from django.utils.translation import gettext as _
 
 # ============================================================================
 # Vistas para Productos
@@ -122,7 +123,7 @@ class ProductDetailView(DetailView):
                 'variant_id': variant.id,
                 'image_url': str(variant_img),
                 'price': str(final_price),
-                'size_value': variant.size.value if variant.size else "N/A"
+                'size_value': variant.size.value if variant.size else _("N/A")
             }
 
         colors = product.variants.exclude(color__isnull=True).values('color__id', 'color__name').distinct()
@@ -298,6 +299,7 @@ class AddWishView(LoginRequiredMixin, View):
         product = get_object_or_404(Product, id=product_id)
         profile = request.user.profile
         profile.wish_list.add(product)
+        messages.success(request, _("Producto añadido a favoritos"))
         return redirect('wish_list')
 
 
@@ -306,6 +308,7 @@ class RemoveWishView(LoginRequiredMixin, View):
         product = get_object_or_404(Product, id=product_id)
         profile = request.user.profile
         profile.wish_list.remove(product)
+        messages.success(request, _("Producto eliminado de favoritos"))
         return redirect('wish_list')
 
 
@@ -326,6 +329,7 @@ class CreateOrderView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         cart = request.session.get('cart', {})
         if not cart:
+            messages.warning(request, _("Tu carrito está vacío"))
             return redirect('product_list')
 
         total = Decimal('0.00')
@@ -338,7 +342,7 @@ class CreateOrderView(LoginRequiredMixin, View):
             user=request.user,
             total=total,
             shipping_address=shipping_address,
-            status="Pendiente",
+            status=_("Pendiente"),
         )
 
         for key, details in cart.items():
@@ -355,6 +359,7 @@ class CreateOrderView(LoginRequiredMixin, View):
                 purchase_price=Decimal(details['price']),
             )
         request.session['cart'] = {}
+        messages.success(request, _("Orden creada exitosamente"))
         return redirect('order_list')
 
 
@@ -362,46 +367,46 @@ class CancelOrderView(LoginRequiredMixin, View):
     def post(self, request, order_id, *args, **kwargs):
         order = get_object_or_404(Order, id=order_id, user=request.user)
         if order.entregado or order.enviado:
-            messages.error(request, "No se puede cancelar una orden ya enviada o entregada.")
-        elif order.status == "Cancelado":
-            messages.error(request, "La orden ya está cancelada.")
+            messages.error(request, _("No se puede cancelar una orden ya enviada o entregada."))
+        elif order.status == _("Cancelada"):
+            messages.error(request, _("La orden ya está cancelada."))
         else:
-            order.status = "Cancelado"
+            order.status = _("Cancelado")
             order.save()
-            messages.success(request, "Orden cancelada correctamente.")
+            messages.success(request, _("Orden cancelada correctamente."))
         return redirect('order_list')
 
 
 class PayOrderView(LoginRequiredMixin, View):
     def post(self, request, order_id, *args, **kwargs):
         order = get_object_or_404(Order, id=order_id, user=request.user)
-        if order.payment is None and order.status == "Pendiente":
+        if order.payment is None and order.status == _("Pendiente"):
             transaction_id = str(uuid.uuid4()).upper()[:12]
             payment = Payment.objects.create(
                 transaction_id=transaction_id,
                 amount=order.total,
-                status="Pagado",
+                status=_("Pagado"),
             )
             order.payment = payment
-            order.status = "Pagado"
+            order.status = _("Pagado")
             order.save()
             self.send_payment_email(order)
+            messages.success(request, _("Pago procesado exitosamente"))
         return redirect('order_list')
 
     def send_payment_email(self, order):
-        subject = 'Confirmación de pago'
+        subject = _('Confirmación de pago')
         message = (
-            f'Hola {order.user.first_name},\n\n'
-            f'Tu orden con ID {order.id} ha sido procesada correctamente.\n'
-            f'Transacción: {order.payment.transaction_id}\n'
-            f'Total pagado: ${order.payment.amount:,.2f}\n\n'
-            'Gracias por tu compra.'
+            f'{_("Hola")} {order.user.first_name},\n\n'
+            f'{_("Tu orden con ID")} {order.id} {_("ha sido procesada correctamente.")}\n'
+            f'{_("Transacción")}: {order.payment.transaction_id}\n'
+            f'{_("Total pagado")}: ${order.payment.amount:,.2f}\n\n'
+            f'{_("Gracias por tu compra.")}'
         )
         from_email = settings.EMAIL_HOST_USER
         recipient_list = [order.user.email]
         try:
             send_mail(subject, message, from_email, recipient_list, fail_silently=False)
-            print(f"Correo enviado a {recipient_list[0]}")
         except Exception as e:
             print(f"Error al enviar el correo: {e}")
 
@@ -451,6 +456,7 @@ class CreateReviewView(LoginRequiredMixin, CreateView):
         product = get_object_or_404(Product, id=self.kwargs['product_id'])
         form.instance.product = product
         form.instance.user = self.request.user
+        messages.success(self.request, _("Reseña creada exitosamente"))
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -463,6 +469,10 @@ class UpdateReviewView(LoginRequiredMixin, UpdateView):
     form_class = ProductReviewForm
     template_name = 'store/review_form.html'
 
+    def form_valid(self, form):
+        messages.success(self.request, _("Reseña actualizada exitosamente"))
+        return super().form_valid(form)
+
     def get_success_url(self):
         return reverse('product_detail', kwargs={'pk': self.object.product.id})
 
@@ -470,6 +480,10 @@ class UpdateReviewView(LoginRequiredMixin, UpdateView):
 class DeleteReviewView(LoginRequiredMixin, DeleteView):
     model = ProductReview
     template_name = 'store/review_confirm_delete.html'
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, _("Reseña eliminada exitosamente"))
+        return super().delete(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse('product_detail', kwargs={'pk': self.object.product.id})
@@ -494,20 +508,27 @@ class GenerateOrderPdfView(View):
             spaceAfter=10,
             fontName='Helvetica-Bold'
         )
-        elements.append(Paragraph(f"Orden #{order.id}", title_style))
+        elements.append(Paragraph(_("Orden #{order_id}").format(order_id=order.id), title_style))
 
         details = f"""
-        <strong>Fecha:</strong> {order.order_date.strftime('%d/%m/%Y')}<br/>
-        <strong>Estado:</strong> {order.status}<br/>
-        <strong>Dirección de envío:</strong> {order.shipping_address if order.shipping_address else '-'}
+        <strong>{_("Fecha")}:</strong> {order.order_date.strftime('%d/%m/%Y')}<br/>
+        <strong>{_("Estado")}:</strong> {order.status}<br/>
+        <strong>{_("Dirección de envío")}:</strong> {order.shipping_address if order.shipping_address else '-'}
         """
         elements.append(Paragraph(details, styles['Normal']))
 
         elements.append(Paragraph("<br/><br/>", styles['Normal']))
 
-        elements.append(Paragraph("<strong>Productos:</strong>", styles['Normal']))
+        elements.append(Paragraph(f"<strong>{_('Productos')}:</strong>", styles['Normal']))
 
-        data = [['Producto', 'Cantidad', 'Precio Unitario', 'Subtotal']]
+        data = [
+            [
+                _("Producto"), 
+                _("Cantidad"), 
+                _("Precio Unitario"), 
+                _("Subtotal")
+            ]
+        ]
         for item in order.items.all():
             product = item.item.product
             subtotal = item.purchase_price * item.quantity
@@ -538,7 +559,7 @@ class GenerateOrderPdfView(View):
             spaceBefore=15,
             fontName='Helvetica-Bold'
         )
-        elements.append(Paragraph(f"Total: ${order.total:,.2f}", total_style))
+        elements.append(Paragraph(f"{_('Total')}: ${order.total:,.2f}", total_style))
 
         pdf.build(elements)
 

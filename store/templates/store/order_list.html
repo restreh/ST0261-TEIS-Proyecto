@@ -1,29 +1,30 @@
 {% extends 'store/base.html' %}
-{% block title %}Mis Compras{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Mis Compras" %}{% endblock %}
 {% block content %}
 <div class="container mt-4">
-    <h1>Mis Compras</h1>
+    <h1>{% trans "Mis Compras" %}</h1>
     {% for order in orders %}
     <div class="card mb-3">
         <div class="card-body">
             <h5 class="card-title">
                 <!-- Enlace clickeable a la vista de detalle de la orden -->
                 <a href="{% url 'order_detail' order.id %}" style="text-decoration: none; color: inherit;">
-                    Orden #{{ order.id }}
+                    {% trans "Orden" %} #{{ order.id }}
                 </a>
             </h5>
             <p class="card-text">
-                <strong>Fecha:</strong> {{ order.order_date|date:"SHORT_DATETIME_FORMAT" }} <br>
-                <strong>Total:</strong> ${{ order.total }} <br>
-                <strong>Estado:</strong>
+                <strong>{% trans "Fecha" %}:</strong> {{ order.order_date|date:"SHORT_DATETIME_FORMAT" }} <br>
+                <strong>{% trans "Total" %}:</strong> ${{ order.total }} <br>
+                <strong>{% trans "Estado" %}:</strong>
                 {% if order.entregado %}
-                <strong><span style="color: green;">Entregado</span></strong><br>
+                <strong><span style="color: green;">{% trans "Entregado" %}</span></strong><br>
                 {% elif order.enviado %}
-                <strong><span style="color: orange;">Enviado</span></strong><br>
+                <strong><span style="color: orange;">{% trans "Enviado" %}</span></strong><br>
                 {% else %}
                 {{ order.status }}<br>
                 {% endif %}
-                <strong>Dirección de envío:</strong> {{ order.shipping_address }}
+                <strong>{% trans "Dirección de envío" %}:</strong> {{ order.shipping_address }}
             </p>
             <ul class="list-group list-group-flush mb-3">
                 {% for item in order.items.all %}
@@ -40,23 +41,23 @@
                 {% if not order.enviado and not order.entregado %}
                 <form action="{% url 'cancel_order' order.id %}" method="post" style="display:inline;">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">Cancelar Orden</button>
+                    <button type="submit" class="btn btn-danger">{% trans "Cancelar Orden" %}</button>
                 </form>
                 {% endif %}
                 {% endif %}
                 {% if order.status == "Pendiente" %}
                 <form action="{% url 'pay_order' order.id %}" method="post" style="display:inline;">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-primary">Pagar ahora</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Pagar ahora" %}</button>
                 </form>
                 {% endif %}
                 <!-- Botón para ver el detalle de la orden -->
-                <a href="{% url 'order_detail' order.id %}" class="btn btn-info">Ver Detalle</a>
+                <a href="{% url 'order_detail' order.id %}" class="btn btn-info">{% trans "Ver Detalle" %}</a>
             </div>
         </div>
     </div>
     {% empty %}
-    <p>No has realizado compras.</p>
+    <p>{% trans "No has realizado compras." %}</p>
     {% endfor %}
 </div>
 {% endblock %}

@@ -1,5 +1,6 @@
 {% extends 'store/base.html' %}
 {% load static %}
+{% load i18n %}
 {% block title %}{{ product.name }}{% endblock %}
 
 {% block content %}
@@ -14,18 +15,18 @@
         <!-- Columna de Selección -->
         <div class="col-md-6">
             <!-- Precio dinámico -->
-            <p><strong>Precio:</strong> <span id="price-display"></span></p>
-            <p><strong>Descripción:</strong> {{ product.description }}</p>
-            <p><strong>Materiales:</strong> {{ product.materials }}</p>
-            <p><strong>Guía de cuidado:</strong> {{ product.care_guide }}</p>
+            <p><strong>{% trans "Precio" %}:</strong> <span id="price-display"></span></p>
+            <p><strong>{% trans "Descripción" %}:</strong> {{ product.description }}</p>
+            <p><strong>{% trans "Materiales" %}:</strong> {{ product.materials }}</p>
+            <p><strong>{% trans "Guía de cuidado" %}:</strong> {{ product.care_guide }}</p>
 
             <!-- Selección de Color -->
-            <p><strong>COLOR:</strong> <span id="selected-color-name">Ninguno</span></p>
+            <p><strong>{% trans "COLOR" %}:</strong> <span id="selected-color-name">{% trans "Ninguno" %}</span></p>
             <div class="d-flex mb-3" id="color-selection">
                 {% for c in colors %}
                 <div class="color-box me-2 text-center border p-2" style="width: 80px; cursor: pointer;"
                     data-color-id="{{ c.color__id }}" data-color-name="{{ c.color__name }}">
-                    <img id="color-thumb-{{ c.color__id }}" src="#" alt="thumb"
+                    <img id="color-thumb-{{ c.color__id }}" src="#" alt="{% trans 'thumb' %}"
                         style="width:60px; height:60px; object-fit: cover;">
                     <p class="mb-0" style="font-size: 1rem;">{{ c.color__name }}</p>
                 </div>
@@ -33,7 +34,7 @@
             </div>
 
             <!-- Selección de Talla -->
-            <p><strong>TALLA:</strong> <span id="selected-size-name">Ninguna</span></p>
+            <p><strong>{% trans "TALLA" %}:</strong> <span id="selected-size-name">{% trans "Ninguna" %}</span></p>
             <div class="d-flex mb-3" id="size-selection">
                 {% for s in sizes %}
                 <div class="size-box me-2 text-center border p-2" style="width: 60px; cursor: pointer;"
@@ -42,25 +43,25 @@
                 </div>
                 {% endfor %}
             </div>
-            <div id="size-error-message" style="color:red; display:none;">No se encuentra disponible en esta talla</div>
+            <div id="size-error-message" style="color:red; display:none;">{% trans "No se encuentra disponible en esta talla" %}</div>
 
             <!-- Formulario para Agregar al Carrito -->
             <form id="add-to-cart-form" action="{% url 'add_to_cart' product.id %}" method="post">
                 {% csrf_token %}
                 <input type="hidden" name="variant_id" id="variant_id" value="">
                 <div class="mb-3">
-                    <label for="quantity" class="form-label">Cantidad:</label>
+                    <label for="quantity" class="form-label">{% trans "Cantidad" %}:</label>
                     <input type="number" name="quantity" id="quantity" value="1" min="1" class="form-control"
                         style="max-width: 100px;">
                 </div>
-                <button type="submit" class="btn btn-success" id="add-to-cart-btn" disabled>Añadir al Carrito</button>
+                <button type="submit" class="btn btn-success" id="add-to-cart-btn" disabled>{% trans "Añadir al Carrito" %}</button>
             </form>
         </div>
     </div>
 
     <hr>
     <!-- Sección de Reseñas -->
-    <h3>Reseñas</h3>
+    <h3>{% trans "Reseñas" %}</h3>
     {% for review in reviews %}
     <div class="card mb-2">
         <div class="card-body">
@@ -69,24 +70,24 @@
             <small class="text-muted">{{ review.created_at|date:"SHORT_DATETIME_FORMAT" }}</small>
             {% if user == review.user %}
             <div>
-                <a href="{% url 'edit_review' review.id %}" class="btn btn-sm btn-primary">Editar</a>
-                <a href="{% url 'delete_review' review.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                <a href="{% url 'edit_review' review.id %}" class="btn btn-sm btn-primary">{% trans "Editar" %}</a>
+                <a href="{% url 'delete_review' review.id %}" class="btn btn-sm btn-danger">{% trans "Eliminar" %}</a>
             </div>
             {% endif %}
         </div>
     </div>
     {% empty %}
-    <p>No hay reseñas aún.</p>
+    <p>{% trans "No hay reseñas aún." %}</p>
     {% endfor %}
 
     {% if purchased and user.is_authenticated %}
     <hr>
-    <h4>{% if user_review %}Editar tu Reseña{% else %}Deja tu Reseña{% endif %}</h4>
+    <h4>{% if user_review %}{% trans "Editar tu Reseña" %}{% else %}{% trans "Deja tu Reseña" %}{% endif %}</h4>
     <form method="post"
         action="{% if user_review %}{% url 'edit_review' user_review.id %}{% else %}{% url 'create_review' product.id %}{% endif %}">
         {% csrf_token %}
         {{ review_form.as_p }}
-        <button type="submit" class="btn btn-primary">{% if user_review %}Actualizar{% else %}Enviar{% endif %}</button>
+        <button type="submit" class="btn btn-primary">{% if user_review %}{% trans "Actualizar" %}{% else %}{% trans "Enviar" %}{% endif %}</button>
     </form>
     {% endif %}
 </div>

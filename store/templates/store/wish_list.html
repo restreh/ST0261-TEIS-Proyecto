@@ -1,7 +1,8 @@
 {% extends 'store/base.html' %}
-{% block title %}Favoritos{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Favoritos" %}{% endblock %}
 {% block content %}
-<h1>Mis Favoritos</h1>
+<h1>{% trans "Mis Favoritos" %}</h1>
 {% if wish_list %}
 <div class="row">
     {% for product in wish_list %}
@@ -11,7 +12,7 @@
                 {% if product.get_default_image_url %}
                 <img src="{{ product.get_default_image_url }}" class="card-img-top" alt="{{ product.name }}">
                 {% else %}
-                <img src="#" class="card-img-top" alt="Sin imagen">
+                <img src="#" class="card-img-top" alt="{% trans 'Sin imagen' %}">
                 {% endif %}
             </a>
             <div class="card-body">
@@ -22,10 +23,10 @@
                 </h5>
                 <p class="card-text">{{ product.description|truncatewords:20 }}</p>
                 <div class="d-flex justify-content-between align-items-center">
-                    <a href="{% url 'product_detail' product.id %}" class="btn btn-primary btn-sm">Ver Detalle</a>
+                    <a href="{% url 'product_detail' product.id %}" class="btn btn-primary btn-sm">{% trans "Ver Detalle" %}</a>
                     <form action="{% url 'remove_wish' product.id %}" method="post">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm">Quitar de Favoritos</button>
+                        <button type="submit" class="btn btn-danger btn-sm">{% trans "Quitar de Favoritos" %}</button>
                     </form>
                 </div>
             </div>
@@ -34,6 +35,6 @@
     {% endfor %}
 </div>
 {% else %}
-<p>No tienes productos en favoritos.</p>
+<p>{% trans "No tienes productos en favoritos." %}</p>
 {% endif %}
 {% endblock %}

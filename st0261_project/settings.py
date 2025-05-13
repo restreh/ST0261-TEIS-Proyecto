@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 
 import environ
+from django.utils.translation import gettext_lazy as _
 
 env = environ.Env()
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,6 +25,12 @@ DEBUG = env.bool('DEBUG', default=False)
 ALLOWED_HOSTS = []
 
 LOGIN_REDIRECT_URL = '/'
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
 
 # Application definition
 
@@ -42,6 +49,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -114,6 +122,11 @@ USE_L10N = True
 USE_TZ = True
 
 USE_THOUSAND_SEPARATOR = True
+
+LANGUAGES = [
+    ("es", _("Spanish")),
+    ("en", _("English")),
+]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
