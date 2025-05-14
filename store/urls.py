@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth.views import LoginView, LogoutView
 
+from store.api.views import ProductStockListAPIView
 from .views import (
     ProductListView, UserRegistrationView, AddWishView, RemoveWishView, WishListView,
     AddToCartView, RemoveFromCartView, CartDetailView, CreateOrderView, CancelOrderView,
@@ -40,4 +41,7 @@ urlpatterns = [
     path('wish_list/', WishListView.as_view(), name='wish_list'),
     path('wish_list/add/<int:product_id>/', AddWishView.as_view(), name='add_wish'),
     path('wish_list/remove/<int:product_id>/', RemoveWishView.as_view(), name='remove_wish'),
+
+    #api
+    path('api/products-stock/', ProductStockListAPIView.as_view(), name='api_products_stock'),
 ]
