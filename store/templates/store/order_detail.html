@@ -1,56 +1,141 @@
-{% extends 'store/base.html' %}
-{% load i18n %}
+{% extends 'store/base.html' %} {% load i18n %} {% block title %} {% trans
+"Detalle de Orden" %} #{{ order.id }} {% endblock %} {% block content %}
+<style>
+  .order-container {
+    background-color: #fff;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
 
-{% block title %}{% trans "Detalle de Orden" %} #{{ order.id }}{% endblock %}
+  .order-header h1 {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
 
-{% block content %}
-<div class="container mt-4">
+  .order-status span {
+    font-weight: bold;
+  }
+
+  .status-entregado {
+    color: green;
+  }
+
+  .status-enviado {
+    color: orange;
+  }
+
+  .order-item-card {
+    border-radius: 0.5rem;
+    border: 1px solid #dee2e6;
+    display: flex;
+    flex-wrap: wrap;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: #fafafa;
+  }
+
+  .order-item-details {
+    flex: 1 1 250px;
+  }
+
+  .order-item-image {
+    flex: 0 0 150px;
+    text-align: right;
+  }
+
+  .order-item-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.3rem;
+  }
+
+  .btn-group-footer {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  @media (max-width: 576px) {
+    .order-item-card {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .order-item-image {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .btn-group-footer {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>
+
+<div class="container mt-4 order-container">
+  <div class="order-header text-center">
     <h1>{% trans "Detalle de Orden" %} #{{ order.id }}</h1>
-    <p><strong>{% trans "Fecha" %}:</strong> {{ order.order_date|date:"SHORT_DATETIME_FORMAT" }}</p>
-    <p><strong>{% trans "Total" %}:</strong> ${{ order.total }}</p>
-    <p><strong>{% trans "Estado" %}:</strong>
-        {% if order.entregado %}
-        <span style="color:green;">{% trans "Entregado" %}</span>
-        {% elif order.enviado %}
-        <span style="color:orange;">{% trans "Enviado" %}</span>
-        {% else %}
-        {{ order.status }}
-        {% endif %}
-    </p>
-    <p><strong>{% trans "Dirección de Envío" %}:</strong> {{ order.shipping_address }}</p>
-    <hr>
-    <h3>{% trans "Productos en la Orden" %}</h3>
-    {% for obj in order_items %}
-    <div class="card mb-2">
-        <div class="card-body d-flex">
-            <div class="flex-grow-1">
-                <p><strong>{{ obj.item.item.product.name }}</strong></p>
-                <p>
-                    {% if obj.item.item.color %}{% trans "Color" %}: {{ obj.item.item.color.name }}{% endif %}
-                </p>
-                <p> 
-                    {% if obj.item.item.size %}{% trans "Talla" %}: {{ obj.item.item.size.value }}{% endif %}
-                </p>
-                <p>{% trans "Cantidad" %}: {{ obj.item.quantity }}</p>
-                <p>{% trans "Precio unitario" %}: ${{ obj.item.purchase_price }}</p>
-                <p>{% trans "Subtotal" %}: ${{ obj.subtotal }}</p>
-            </div>
-            <div>
-                {% if obj.item.item.images.first %}
-                <img src="{{ obj.item.item.images.first.image.url }}" alt="{{ obj.item.item.product.name }}"
-                    style="width:150px;">
-                {% endif %}
-            </div>
-        </div>
+  </div>
+
+  <p>
+    <strong>{% trans "Fecha" %}:</strong> {{ order.order_date|date:"d/m/Y H:i"}}
+  </p>
+  <p><strong>{% trans "Total" %}:</strong> ${{ order.total|floatformat:2 }}</p>
+  <p class="order-status">
+    <strong>{% trans "Estado" %}:</strong>
+    {% if order.entregado %}
+    <span class="status-entregado">{% trans "Entregado" %}</span>
+    {% elif order.enviado %}
+    <span class="status-enviado">{% trans "Enviado" %}</span>
+    {% else %} {{ order.status }} {% endif %}
+  </p>
+  <p>
+    <strong>{% trans "Dirección de Envío" %}:</strong>
+    {{order.shipping_address}}
+  </p>
+
+  <hr />
+
+  <h3 class="mt-4">{% trans "Productos en la Orden" %}</h3>
+
+  {% for obj in order_items %}
+  <div class="order-item-card">
+    <div class="order-item-details">
+      <p><strong>{{ obj.product.name }}</strong></p>
+      {% if obj.color %}
+      <p>{% trans "Color" %}: {{obj.color.name}}</p>
+      {% endif %} {% if obj.size %}
+      <p>{% trans "Talla" %}: {{obj.size.value}}</p>
+      {% endif %}
+      <p>{% trans "Cantidad" %}: {{obj.quantity}}</p>
+      <p>
+        {% trans "Precio unitario" %}: ${{obj.purchase_price|floatformat:2}}
+      </p>
+      <p>{% trans "Subtotal" %}: ${{ obj.subtotal|floatformat:2 }}</p>
     </div>
-    {% endfor %}
-    <div class="mt-4 d-flex justify-content-between">
-        <a href="{% url 'order_list' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> {% trans "Volver a Mis Compras" %}
-        </a>
-        <a href="{% url 'order_pdf' order.id %}" class="btn btn-primary" download>
-            <i class="fas fa-file-download"></i> {% trans "Descargar PDF" %}
-        </a>
+    <div class="order-item-image">
+      {% if obj.product.images.first %}
+      <img
+        src="{{ obj.product.images.first.image.url }}"
+        alt="{{ obj.product.name }}"
+      />
+      {% endif %}
     </div>
+  </div>
+  {% endfor %}
+
+  <div class="mt-4 btn-group-footer">
+    <a href="{% url 'order_list' %}" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-left"></i> {% trans "Volver a Mis Compras" %}
+    </a>
+    <a href="{% url 'order_pdf' order.id %}" class="btn btn-primary" download>
+      <i class="fas fa-file-download"></i> {% trans "Descargar PDF" %}
+    </a>
+  </div>
 </div>
 {% endblock %}

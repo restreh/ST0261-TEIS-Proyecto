@@ -26,10 +26,8 @@ ALLOWED_HOSTS = []
 
 LOGIN_REDIRECT_URL = '/'
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-
 LOCALE_PATHS = [
-    BASE_DIR / 'locale',
+    BASE_DIR / 'store' / 'locale',  # Ruta más específica
 ]
 
 # Application definition
@@ -70,10 +68,12 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'store.context_processors.currency_context',
             ],
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'st0261_project.wsgi.application'
 
@@ -149,3 +149,11 @@ EMAIL_PORT = env.int('EMAIL_PORT', default=587)
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+
+EXCHANGE_RATE_API_KEY = 'db5d9477ab3733a20c1e853a'
+
+CURRENCIES = {
+    'USD': 'Dólares',
+    'COP': 'Pesos Colombianos',
+    'EUR': 'Euros'
+}

@@ -2,11 +2,30 @@
 {% load static %}
 {% load humanize %}
 {% load i18n %}
+{% load currency_tags %}
 {% block title %}{% trans "Productos Disponibles" %}{% endblock %}
 
 {% block content %}
 
 <div class="container mt-4">
+    <!-- Selector de Moneda -->
+    <div class="d-flex justify-content-end mb-3">
+        <form method="GET" action="{% url 'product_list' %}" class="d-flex">
+            <select name="currency" class="form-select me-2" style="width: auto;" onchange="this.form.submit()">
+                {% for code, name in available_currencies.items %}
+                    <option value="{{ code }}" {% if selected_currency == code %}selected{% endif %}>
+                        {{ name }} ({{ code }})
+                    </option>
+                {% endfor %}
+            </select>
+            <input type="hidden" name="q" value="{{ request.GET.q }}">
+            <input type="hidden" name="color" value="{{ request.GET.color }}">
+            <input type="hidden" name="size" value="{{ request.GET.size }}">
+            <input type="hidden" name="gender" value="{{ request.GET.gender }}">
+            <input type="hidden" name="min_price" value="{{ request.GET.min_price }}">
+            <input type="hidden" name="max_price" value="{{ request.GET.max_price }}">
+        </form>
+    </div>
 
     <form method="GET" action="{% url 'product_list' %}" class="mb-4">
         <!-- Búsqueda -->
@@ -84,7 +103,20 @@
                         </a>
                     </h5>
                     <p class="card-text">{{ product.description|truncatewords:20 }}</p>
-                    <p class="card-text"><strong>{% trans "Precio" %}:</strong> ${{ product.base_price|floatformat:0|intcomma }}</p>
+                    <div class="price-container">
+                        <p class="card-text">
+                            <strong>{% trans "Precio" %}:</strong>
+                            <span class="original-price">
+                                ${{ product.base_price|floatformat:0|intcomma }} USD
+                            </span>
+                            {% if selected_currency != 'USD' %}
+                            <br>
+                            <span class="converted-price">
+                                {{ selected_currency|currency_symbol }}{{ product.base_price|multiply:exchange_rate|floatformat:0|intcomma }} {{ selected_currency }}
+                            </span>
+                            {% endif %}
+                        </p>
+                    </div>
                     <div class="mt-auto d-flex justify-content-between align-items-center">
                         <form action="{% url 'add_to_cart' product.id %}" method="post" class="flex-grow-1 me-2">
                             {% csrf_token %}
@@ -110,8 +142,144 @@
             </div>
         </div>
         {% empty %}
-        <p>{% trans "No hay productos disponibles." %}</p>
+        <div class="col-12">
+            <div class="alert alert-info">{% trans "No hay productos disponibles." %}</div>
+        </div>
         {% endfor %}
     </div>
+
+    <!-- Paginación -->
+    {% if is_paginated %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    {% trans "Primera" %}
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    &laquo;
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active">
+                <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    {{ num }}
+                </a>
+            </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    {{ num }}
+                </a>
+            </li>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    &raquo;
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    {% trans "Última" %}
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 </div>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+
+    h1.page-title {
+        font-size: 3rem;
+        font-weight: 800;
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 2rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .card {
+        border: none;
+        border-radius: 15px;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .card:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        transform: scale(1.02);
+    }
+
+    .card-title {
+        font-weight: bold;
+        color: #34495e;
+    }
+
+    .btn-success {
+        background-color: #27ae60;
+        border-color: #27ae60;
+    }
+
+    .btn-success:hover {
+        background-color: #219150;
+        border-color: #219150;
+    }
+
+    .form-select,
+    .form-control {
+        border-radius: 10px;
+    }
+
+    .pagination .page-link {
+        border-radius: 50%;
+        margin: 0 5px;
+        color: #2c3e50;
+    }
+
+    .pagination .active .page-link {
+        background-color: #2c3e50;
+        border-color: #2c3e50;
+        color: white;
+    }
+
+    .converted-price {
+        color: #888;
+        font-size: 0.9rem;
+    }
+
+    .price-container {
+        min-height: 60px;
+    }
+
+    .original-price {
+        color: #2a5885;
+        font-weight: bold;
+    }
+
+    .filters-container {
+        background-color: #fff;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .currency-selector {
+        max-width: 250px;
+    }
+</style>
+
 {% endblock %}
