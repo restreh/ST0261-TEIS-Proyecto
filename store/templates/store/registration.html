@@ -1,18 +1,10 @@
-{% extends 'store/base.html' %} {% load i18n %} {% block title %}{% trans
-"Registrarse" %}{% endblock %} {% block content %}
-<div
-  class="d-flex justify-content-center align-items-center"
-  style="min-height: 80vh; margin-top: 10px"
->
-  <div class="card shadow p-4" style="width: 100%; max-width: 500px">
-    <h3 class="text-center mb-4">{% trans "Registrarse" %}</h3>
-
-    <form method="post">
-      {% csrf_token %} {{ form.as_p }}
-      <button type="submit" class="btn btn-success w-100 mt-3">
-        {% trans "Registrarse" %}
-      </button>
-    </form>
-  </div>
-</div>
+{% extends 'store/base.html' %}
+{% block title %}Registrarse{% endblock %}
+{% block content %}
+<h1>Registrarse</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Registrarse</button>
+</form>
 {% endblock %}

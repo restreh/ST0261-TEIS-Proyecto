@@ -13,7 +13,6 @@ import os
 from pathlib import Path
 
 import environ
-from django.utils.translation import gettext_lazy as _
 
 env = environ.Env()
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,10 +24,6 @@ DEBUG = env.bool('DEBUG', default=False)
 ALLOWED_HOSTS = []
 
 LOGIN_REDIRECT_URL = '/'
-
-LOCALE_PATHS = [
-    BASE_DIR / 'store' / 'locale',  # Ruta más específica
-]
 
 # Application definition
 
@@ -47,7 +42,6 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -68,12 +62,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'store.context_processors.currency_context',
             ],
         },
     },
 ]
-
 
 WSGI_APPLICATION = 'st0261_project.wsgi.application'
 
@@ -123,11 +115,6 @@ USE_TZ = True
 
 USE_THOUSAND_SEPARATOR = True
 
-LANGUAGES = [
-    ("es", _("Spanish")),
-    ("en", _("English")),
-]
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
@@ -149,11 +136,3 @@ EMAIL_PORT = env.int('EMAIL_PORT', default=587)
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
-
-EXCHANGE_RATE_API_KEY = 'db5d9477ab3733a20c1e853a'
-
-CURRENCIES = {
-    'USD': 'Dólares',
-    'COP': 'Pesos Colombianos',
-    'EUR': 'Euros'
-}

@@ -1,6 +1,7 @@
 import json
 import uuid
 from decimal import Decimal
+
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -21,13 +22,11 @@ from django.views.generic import ListView, TemplateView, DetailView
 from django.views.generic.edit import FormView, CreateView, UpdateView, DeleteView
 
 from .forms import RegistrationForm, ProductReviewForm
+from store.interfaces.cart import CartServiceInterface
+from .services.cart_session import SessionCartService
 from .models import (
     Order, OrderItem, Payment, Product, ProductVariant, ProductReview, Color, Size
 )
-
-from django.utils.translation import gettext as _
-from .services import get_exchange_rate
-
 
 # ============================================================================
 # Vistas para Productos
@@ -65,24 +64,10 @@ class ProductListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Manejo de moneda
-        selected_currency = self.request.GET.get('currency') or self.request.session.get('currency', 'COP')
-        if selected_currency not in settings.CURRENCIES:
-            selected_currency = 'USD'
-        self.request.session['currency'] = selected_currency
-        
-        context['available_currencies'] = settings.CURRENCIES
-        context['selected_currency'] = selected_currency
-        
-        # Resto del contexto existente
-        context.update({
-            'colors': Color.objects.all(),
-            'sizes': Size.objects.all(),
-            'genders': Product.GENDER_CHOICES,
-            'query': self.request.GET.get('q', '')
-        })
-        
+        context['colors'] = Color.objects.all()
+        context['sizes'] = Size.objects.all()
+        context['genders'] = Product.GENDER_CHOICES
+        context['query'] = self.request.GET.get('q', '')
         return context
 
 
@@ -94,118 +79,94 @@ class ProductDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         product = self.get_object()
-        
-        # ==============================================
-        # Manejo de moneda y conversión
-        # ==============================================
-        selected_currency = self.request.GET.get('currency') or self.request.session.get('currency', 'COP')
-        if selected_currency not in settings.CURRENCIES:
-            selected_currency = 'USD'
-        self.request.session['currency'] = selected_currency
-        
-        exchange_rate = get_exchange_rate('USD', selected_currency)
-        
-        # ==============================================
-        # Construcción de mapas de precios con conversión
-        # ==============================================
         all_variants = product.variants.all()
+
+        # Construir mapa de colores: { color_id: { "image_url": ..., "price": ..., "color_name": ... } }
         color_map = {}
-        variant_map = {}
-        
         for variant in all_variants:
-            # Precio base (USD)
-            price = variant.price_override if variant.price_override else product.base_price
-            converted_price = price * exchange_rate
-            
-            # Mapa de colores
             if variant.color:
                 color_id = variant.color.id
                 if color_id not in color_map:
+                    if variant.images.first():
+                        color_img = variant.images.first().image.url
+                    else:
+                        color_img = product.get_default_image_url()
+                    if variant.price_override:
+                        color_price = variant.price_override
+                    else:
+                        color_price = product.base_price
                     color_map[color_id] = {
-                        "image_url": str(variant.images.first().image.url if variant.images.first() 
-                                      else product.get_default_image_url()),
-                        "price": str(price),
-                        "converted_price": str(converted_price),
+                        "image_url": str(color_img),
+                        "price": str(color_price),
                         "color_name": variant.color.name,
                     }
 
-            # Mapa de variantes
+        # Construir mapa de variantes: { color_id: { size_id: { 'variant_id': ..., 'image_url': ..., 'price': ..., 'size_value': ... } } }
+        variant_map = {}
+        for variant in all_variants:
             color_id = variant.color.id if variant.color else 0
             size_id = variant.size.id if variant.size else 0
 
             if color_id not in variant_map:
                 variant_map[color_id] = {}
 
-            variant_img = (variant.images.first().image.url if variant.images.first() 
-                          else color_map.get(color_id, {}).get("image_url", product.get_default_image_url()))
+            if variant.images.first():
+                variant_img = variant.images.first().image.url
+            else:
+                variant_img = color_map.get(color_id, {}).get("image_url", product.get_default_image_url())
+
+            if variant.price_override:
+                final_price = variant.price_override
+            else:
+                final_price = product.base_price
 
             variant_map[color_id][size_id] = {
                 'variant_id': variant.id,
                 'image_url': str(variant_img),
-                'price': str(price),
-                'converted_price': str(converted_price),
-                'size_value': variant.size.value if variant.size else _("N/A")
+                'price': str(final_price),
+                'size_value': variant.size.value if variant.size else "N/A"
             }
 
-        # ==============================================
-        # Configuración de contextos
-        # ==============================================
-        # Moneda y conversión
-        context.update({
-            'available_currencies': settings.CURRENCIES,
-            'selected_currency': selected_currency,
-            'exchange_rate': exchange_rate,
-            'currency_symbol': '€' if selected_currency == 'EUR' else '$'
-        })
-        
-        # Mapas de productos
-        context.update({
-            'color_map_json': json.dumps(color_map),
-            'variant_map_json': json.dumps(variant_map),
-            'colors': product.variants.exclude(color__isnull=True)
-                           .values('color__id', 'color__name').distinct(),
-            'sizes': product.variants.exclude(size__isnull=True)
-                          .values('size__id', 'size__value').distinct()
-        })
-        
-        # Selección por defecto de color/talla
+        colors = product.variants.exclude(color__isnull=True).values('color__id', 'color__name').distinct()
+        sizes = product.variants.exclude(size__isnull=True).values('size__id', 'size__value').distinct()
+
+        context['color_map_json'] = json.dumps(color_map)
+        context['variant_map_json'] = json.dumps(variant_map)
+        context['colors'] = colors
+        context['sizes'] = sizes
+
         if color_map:
             default_color_id = list(color_map.keys())[0]
             context['default_color_id'] = default_color_id
-            
-            if default_color_id in variant_map:
-                sizes_for_default = list(variant_map[default_color_id].keys())
-                context['default_size_id'] = sizes_for_default[0] if sizes_for_default else None
+        else:
+            context['default_color_id'] = None
+
+        if context['default_color_id'] and context['default_color_id'] in variant_map:
+            sizes_for_default = list(variant_map[context['default_color_id']].keys())
+            if sizes_for_default:
+                default_size_id = sizes_for_default[0]
+                context['default_size_id'] = default_size_id
             else:
                 context['default_size_id'] = None
         else:
-            context['default_color_id'] = None
             context['default_size_id'] = None
-        
-        # Reseñas y validación de compra
-        context['reviews'] = product.reviews.all().order_by('-created_at')
-        if self.request.user.is_authenticated:
-            context['purchased'] = Order.objects.filter(
-                user=self.request.user, 
-                items__item__product=product
-            ).exists()
-            
-            if context['purchased']:
-                if self.request.GET.get('clear_form'):
-                    context['review_form'] = ProductReviewForm()
-                else:
-                    try:
-                        review = product.reviews.get(user=self.request.user)
-                        context['user_review'] = review
-                        context['review_form'] = ProductReviewForm(instance=review)
-                    except ProductReview.DoesNotExist:
-                        context['review_form'] = ProductReviewForm()
-            else:
-                context['review_form'] = None
-        else:
-            context['purchased'] = False
-            context['review_form'] = None
 
+        context['reviews'] = product.reviews.all().order_by('-created_at')
+        user = self.request.user
+        purchased = False
+        if user.is_authenticated:
+            purchased = Order.objects.filter(user=user, items__item__product=product).exists()
+        context['purchased'] = purchased
+        if purchased and user.is_authenticated:
+            if self.request.GET.get('clear_form'):
+                context['review_form'] = ProductReviewForm()
+            else:
+                try:
+                    review = product.reviews.get(user=user)
+                    context['user_review'] = review
+                    context['review_form'] = ProductReviewForm(instance=review)
+                except ProductReview.DoesNotExist:
+                    context['review_form'] = ProductReviewForm()
         return context
 
 
@@ -213,143 +174,91 @@ class ProductDetailView(DetailView):
 # Vistas relacionadas con el Carrito
 # ============================================================================
 
-class CartMixin:
-    """Mixin para obtener y guardar el carrito en la sesión."""
-    def get_cart(self, request):
-        return request.session.get('cart', {})
+class AddToCartView(View):
+    cart_service: CartServiceInterface = SessionCartService()
 
-    def save_cart(self, request, cart):
-        request.session['cart'] = cart
-        request.session.modified = True
-
-
-class AddToCartView(View, CartMixin):
     def post(self, request, product_id):
         variant_id = request.POST.get('variant_id')
-        quantity = request.POST.get('quantity', 1)
         try:
-            quantity = int(quantity)
+            quantity = int(request.POST.get('quantity', 1))
         except ValueError:
             quantity = 1
         if quantity < 1:
             quantity = 1
 
+        # Calcular precio según variante o producto base
         if variant_id:
             variant = get_object_or_404(ProductVariant, id=variant_id)
             price = variant.price_override if variant.price_override else variant.product.base_price
-            key = f"variant-{variant_id}"
         else:
             product = get_object_or_404(Product, id=product_id)
             price = product.base_price
-            key = str(product_id)
 
-        cart = self.get_cart(request)
-        if key in cart:
-            cart[key]['quantity'] += quantity
-        else:
-            cart[key] = {'quantity': quantity, 'price': str(price)}
-        self.save_cart(request, cart)
+        # Delegar lógica de carrito al servicio, pasando precio calculado
+        self.cart_service.add(
+            request,
+            variant_id=variant_id,
+            product_id=product_id,
+            quantity=quantity,
+            price=price
+        )
         return redirect('cart_detail')
 
 
-class RemoveFromCartView(View, CartMixin):
+class RemoveFromCartView(View):
+    cart_service: CartServiceInterface = SessionCartService()
+
     def post(self, request, product_id):
-        product = get_object_or_404(Product, id=product_id)
+        variant_id = request.POST.get('variant_id')
         try:
             quantity = int(request.POST.get('quantity', 1))
         except ValueError:
             quantity = 1
+        if quantity < 1:
+            quantity = 1
 
-        cart = self.get_cart(request)
-        key = str(product_id)
-        if key in cart:
-            if quantity >= cart[key]['quantity']:
-                del cart[key]
-            else:
-                cart[key]['quantity'] -= quantity
-            self.save_cart(request, cart)
+        # Delegar eliminación al servicio
+        self.cart_service.remove(
+            request,
+            variant_id=variant_id,
+            product_id=product_id,
+            quantity=quantity
+        )
         return redirect('cart_detail')
 
 
-class CartDetailView(TemplateView, CartMixin):
+class CartDetailView(TemplateView):
     template_name = 'store/cart_detail.html'
+    cart_service: CartServiceInterface = SessionCartService()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        cart = self.get_cart(self.request)
-        
-        # ==============================================
-        # Manejo de moneda y conversión
-        # ==============================================
-        selected_currency = self.request.GET.get('currency') or self.request.session.get('currency', 'COP')
-        if selected_currency not in settings.CURRENCIES:
-            selected_currency = 'USD'
-        self.request.session['currency'] = selected_currency
-        
-        exchange_rate = get_exchange_rate('USD', selected_currency)
-        
-        # ==============================================
-        # Procesamiento del carrito con conversión
-        # ==============================================
+        cart = self.cart_service.get(self.request)
         items = []
-        total_usd = Decimal('0.00')
-        total_converted = Decimal('0.00')
-        
+        total = 0
+        # Procesamiento de items similar al original, adaptado si es necesario
         for key, details in cart.items():
             quantity = details['quantity']
-            price_usd = Decimal(details['price'])
-            subtotal_usd = price_usd * quantity
-            
-            # Calcular precios convertidos
-            price_converted = price_usd * exchange_rate
-            subtotal_converted = subtotal_usd * exchange_rate
-            
-            if key.startswith("variant-"):
-                variant_id = key.split("-")[1]
+            price = float(details['price'])
+            if key.startswith('variant-'):
+                variant_id = int(key.split('-')[1])
                 variant = get_object_or_404(ProductVariant, id=variant_id)
                 product = variant.product
-                
-                items.append({
-                    'variant': variant,
-                    'product': product,
-                    'quantity': quantity,
-                    'price_usd': price_usd,
-                    'price_converted': price_converted,
-                    'subtotal_usd': subtotal_usd,
-                    'subtotal_converted': subtotal_converted,
-                    'has_variant': True
-                })
             else:
                 product_id = int(key)
+                variant = None
                 product = get_object_or_404(Product, id=product_id)
-                
-                items.append({
-                    'variant': None,
-                    'product': product,
-                    'quantity': quantity,
-                    'price_usd': price_usd,
-                    'price_converted': price_converted,
-                    'subtotal_usd': subtotal_usd,
-                    'subtotal_converted': subtotal_converted,
-                    'has_variant': False
-                })
-            
-            total_usd += subtotal_usd
-            total_converted += subtotal_converted
-        
-        # ==============================================
-        # Configuración del contexto
-        # ==============================================
-        context.update({
-            'cart_items': items,
-            'total_usd': total_usd,
-            'total_converted': total_converted,
-            'available_currencies': settings.CURRENCIES,
-            'selected_currency': selected_currency,
-            'exchange_rate': exchange_rate,
-            'currency_symbol': '€' if selected_currency == 'EUR' else '$'
-        })
-        
+            subtotal = price * quantity
+            total += subtotal
+            items.append({
+                'variant': variant,
+                'product': product,
+                'quantity': quantity,
+                'price': price,
+                'subtotal': subtotal,
+            })
+        context['cart_items'] = items
+        context['total'] = total
         return context
 
 
@@ -380,7 +289,6 @@ class AddWishView(LoginRequiredMixin, View):
         product = get_object_or_404(Product, id=product_id)
         profile = request.user.profile
         profile.wish_list.add(product)
-        messages.success(request, _("Producto añadido a favoritos"))
         return redirect('wish_list')
 
 
@@ -389,7 +297,6 @@ class RemoveWishView(LoginRequiredMixin, View):
         product = get_object_or_404(Product, id=product_id)
         profile = request.user.profile
         profile.wish_list.remove(product)
-        messages.success(request, _("Producto eliminado de favoritos"))
         return redirect('wish_list')
 
 
@@ -407,10 +314,12 @@ class WishListView(LoginRequiredMixin, TemplateView):
 # ============================================================================
 
 class CreateOrderView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('register')
+    redirect_field_name = None
+    
     def post(self, request, *args, **kwargs):
         cart = request.session.get('cart', {})
         if not cart:
-            messages.warning(request, _("Tu carrito está vacío"))
             return redirect('product_list')
 
         total = Decimal('0.00')
@@ -423,7 +332,7 @@ class CreateOrderView(LoginRequiredMixin, View):
             user=request.user,
             total=total,
             shipping_address=shipping_address,
-            status=_("Pendiente"),
+            status="Pendiente",
         )
 
         for key, details in cart.items():
@@ -440,7 +349,6 @@ class CreateOrderView(LoginRequiredMixin, View):
                 purchase_price=Decimal(details['price']),
             )
         request.session['cart'] = {}
-        messages.success(request, _("Orden creada exitosamente"))
         return redirect('order_list')
 
 
@@ -448,46 +356,46 @@ class CancelOrderView(LoginRequiredMixin, View):
     def post(self, request, order_id, *args, **kwargs):
         order = get_object_or_404(Order, id=order_id, user=request.user)
         if order.entregado or order.enviado:
-            messages.error(request, _("No se puede cancelar una orden ya enviada o entregada."))
-        elif order.status == _("Cancelada"):
-            messages.error(request, _("La orden ya está cancelada."))
+            messages.error(request, "No se puede cancelar una orden ya enviada o entregada.")
+        elif order.status == "Cancelado":
+            messages.error(request, "La orden ya está cancelada.")
         else:
-            order.status = _("Cancelado")
+            order.status = "Cancelado"
             order.save()
-            messages.success(request, _("Orden cancelada correctamente."))
+            messages.success(request, "Orden cancelada correctamente.")
         return redirect('order_list')
 
 
 class PayOrderView(LoginRequiredMixin, View):
     def post(self, request, order_id, *args, **kwargs):
         order = get_object_or_404(Order, id=order_id, user=request.user)
-        if order.payment is None and order.status == _("Pendiente"):
+        if order.payment is None and order.status == "Pendiente":
             transaction_id = str(uuid.uuid4()).upper()[:12]
             payment = Payment.objects.create(
                 transaction_id=transaction_id,
                 amount=order.total,
-                status=_("Pagado"),
+                status="Pagado",
             )
             order.payment = payment
-            order.status = _("Pagado")
+            order.status = "Pagado"
             order.save()
             self.send_payment_email(order)
-            messages.success(request, _("Pago procesado exitosamente"))
         return redirect('order_list')
 
     def send_payment_email(self, order):
-        subject = _('Confirmación de pago')
+        subject = 'Confirmación de pago'
         message = (
-            f'{_("Hola")} {order.user.first_name},\n\n'
-            f'{_("Tu orden con ID")} {order.id} {_("ha sido procesada correctamente.")}\n'
-            f'{_("Transacción")}: {order.payment.transaction_id}\n'
-            f'{_("Total pagado")}: ${order.payment.amount:,.2f}\n\n'
-            f'{_("Gracias por tu compra.")}'
+            f'Hola {order.user.first_name},\n\n'
+            f'Tu orden con ID {order.id} ha sido procesada correctamente.\n'
+            f'Transacción: {order.payment.transaction_id}\n'
+            f'Total pagado: ${order.payment.amount:,.2f}\n\n'
+            'Gracias por tu compra.'
         )
         from_email = settings.EMAIL_HOST_USER
         recipient_list = [order.user.email]
         try:
             send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+            print(f"Correo enviado a {recipient_list[0]}")
         except Exception as e:
             print(f"Error al enviar el correo: {e}")
 
@@ -537,7 +445,6 @@ class CreateReviewView(LoginRequiredMixin, CreateView):
         product = get_object_or_404(Product, id=self.kwargs['product_id'])
         form.instance.product = product
         form.instance.user = self.request.user
-        messages.success(self.request, _("Reseña creada exitosamente"))
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -550,10 +457,6 @@ class UpdateReviewView(LoginRequiredMixin, UpdateView):
     form_class = ProductReviewForm
     template_name = 'store/review_form.html'
 
-    def form_valid(self, form):
-        messages.success(self.request, _("Reseña actualizada exitosamente"))
-        return super().form_valid(form)
-
     def get_success_url(self):
         return reverse('product_detail', kwargs={'pk': self.object.product.id})
 
@@ -561,10 +464,6 @@ class UpdateReviewView(LoginRequiredMixin, UpdateView):
 class DeleteReviewView(LoginRequiredMixin, DeleteView):
     model = ProductReview
     template_name = 'store/review_confirm_delete.html'
-
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, _("Reseña eliminada exitosamente"))
-        return super().delete(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse('product_detail', kwargs={'pk': self.object.product.id})
@@ -589,27 +488,20 @@ class GenerateOrderPdfView(View):
             spaceAfter=10,
             fontName='Helvetica-Bold'
         )
-        elements.append(Paragraph(_("Orden #{order_id}").format(order_id=order.id), title_style))
+        elements.append(Paragraph(f"Orden #{order.id}", title_style))
 
         details = f"""
-        <strong>{_("Fecha")}:</strong> {order.order_date.strftime('%d/%m/%Y')}<br/>
-        <strong>{_("Estado")}:</strong> {order.status}<br/>
-        <strong>{_("Dirección de envío")}:</strong> {order.shipping_address if order.shipping_address else '-'}
+        <strong>Fecha:</strong> {order.order_date.strftime('%d/%m/%Y')}<br/>
+        <strong>Estado:</strong> {order.status}<br/>
+        <strong>Dirección de envío:</strong> {order.shipping_address if order.shipping_address else '-'}
         """
         elements.append(Paragraph(details, styles['Normal']))
 
         elements.append(Paragraph("<br/><br/>", styles['Normal']))
 
-        elements.append(Paragraph(f"<strong>{_('Productos')}:</strong>", styles['Normal']))
+        elements.append(Paragraph("<strong>Productos:</strong>", styles['Normal']))
 
-        data = [
-            [
-                _("Producto"), 
-                _("Cantidad"), 
-                _("Precio Unitario"), 
-                _("Subtotal")
-            ]
-        ]
+        data = [['Producto', 'Cantidad', 'Precio Unitario', 'Subtotal']]
         for item in order.items.all():
             product = item.item.product
             subtotal = item.purchase_price * item.quantity
@@ -640,7 +532,7 @@ class GenerateOrderPdfView(View):
             spaceBefore=15,
             fontName='Helvetica-Bold'
         )
-        elements.append(Paragraph(f"{_('Total')}: ${order.total:,.2f}", total_style))
+        elements.append(Paragraph(f"Total: ${order.total:,.2f}", total_style))
 
         pdf.build(elements)
 

@@ -1,135 +1,64 @@
-{% extends 'store/base.html' %} {% load i18n %} {% block title %}{% trans "Mis
-Compras" %}{% endblock %} {% block content %}
-
-<style>
-  .order-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border-radius: 0.5rem;
-  }
-
-  .order-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.08);
-  }
-
-  .order-status {
-    font-weight: bold;
-    font-size: 0.95rem;
-  }
-
-  .status-entregado {
-    color: green;
-  }
-
-  .status-enviado {
-    color: orange;
-  }
-
-  .status-pendiente {
-    color: red;
-  }
-
-  .order-title a {
-    color: #343a40;
-    text-decoration: none;
-  }
-
-  .order-title a:hover {
-    color: #0d6efd;
-    text-decoration: underline;
-  }
-
-  .order-items li {
-    font-size: 0.95rem;
-  }
-
-  @media (max-width: 576px) {
-    .order-title h5 {
-      font-size: 1.1rem;
-    }
-
-    .order-items li {
-      font-size: 0.9rem;
-    }
-
-    .order-card .btn {
-      margin-top: 0.3rem;
-      width: 100%;
-    }
-  }
-</style>
-
+{% extends 'store/base.html' %}
+{% block title %}Mis Compras{% endblock %}
+{% block content %}
 <div class="container mt-4">
-  <h1 class="text-center mb-4">{% trans "Mis Compras" %}</h1>
-
-  {% for order in orders %}
-  <div class="card mb-4 order-card shadow-sm">
-    <div class="card-body">
-      <h5 class="card-title order-title">
-        <a href="{% url 'order_detail' order.id %}">
-          {% trans "Orden" %} #{{ order.id }}
-        </a>
-      </h5>
-
-      <p class="card-text text-muted mb-2">
-        <strong>{% trans "Fecha" %}:</strong>
-        {{ order.order_date|date:"SHORT_DATETIME_FORMAT" }}<br />
-        <strong>{% trans "Total" %}:</strong> ${{ order.total }}<br />
-        <strong>{% trans "Estado" %}:</strong>
-        {% if order.entregado %}
-        <span class="order-status status-entregado"
-          >{% trans "Entregado" %}</span
-        ><br />
-        {% elif order.enviado %}
-        <span class="order-status status-enviado">{% trans "Enviado" %}</span
-        ><br />
-        {% else %}
-        <span class="order-status status-pendiente">{{ order.status }}</span
-        ><br />
-        {% endif %}
-        <strong>{% trans "Dirección de envío" %}:</strong>
-        {{order.shipping_address }}
-      </p>
-
-      <ul class="list-group list-group-flush order-items mb-3">
-        {% for item in order.items.all %}
-        <li class="list-group-item">
-          {{ item.item.product.name }} {% if item.item.color %}-
-          {{item.item.color.name }}{% endif %} {% if item.item.size %}-
-          {{item.item.size.value }}{% endif %} × {{ item.quantity }} –
-          ${{item.purchase_price }}
-        </li>
-        {% endfor %}
-      </ul>
-
-      <div class="d-flex flex-wrap gap-2">
-        {% if order.status == "Pendiente" or order.status == "Pagado" %}
-        <form action="{% url 'cancel_order' order.id %}" method="post">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-outline-danger">
-            {% trans "Cancelar Orden" %}
-          </button>
-        </form>
-        {% endif %} {% if order.status == "Pendiente" %}
-        <form action="{% url 'pay_order' order.id %}" method="post">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-outline-primary">
-            {% trans "Pagar ahora" %}
-          </button>
-        </form>
-        {% endif %}
-        <a
-          href="{% url 'order_detail' order.id %}"
-          class="btn btn-outline-info"
-        >
-          {% trans "Ver Detalle" %}
-        </a>
-      </div>
+    <h1>Mis Compras</h1>
+    {% for order in orders %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">
+                <!-- Enlace clickeable a la vista de detalle de la orden -->
+                <a href="{% url 'order_detail' order.id %}" style="text-decoration: none; color: inherit;">
+                    Orden #{{ order.id }}
+                </a>
+            </h5>
+            <p class="card-text">
+                <strong>Fecha:</strong> {{ order.order_date|date:"SHORT_DATETIME_FORMAT" }} <br>
+                <strong>Total:</strong> ${{ order.total }} <br>
+                <strong>Estado:</strong>
+                {% if order.entregado %}
+                <strong><span style="color: green;">Entregado</span></strong><br>
+                {% elif order.enviado %}
+                <strong><span style="color: orange;">Enviado</span></strong><br>
+                {% elif order.status == "Cancelado" %}
+                <strong><span style="color: red;">Cancelado</span></strong><br>
+                {% else %}
+                {{ order.status }}<br>
+                {% endif %}
+                <strong>Dirección de envío:</strong> {{ order.shipping_address }}
+            </p>
+            <ul class="list-group list-group-flush mb-3">
+                {% for item in order.items.all %}
+                <li class="list-group-item">
+                    {{ item.item.product.name }} -
+                    {% if item.item.color %}{{ item.item.color.name }}{% endif %}
+                    {% if item.item.size %}{{ item.item.size.value }}{% endif %}
+                    x {{ item.quantity }} - ${{ item.purchase_price }}
+                </li>
+                {% endfor %}
+            </ul>
+            <div>
+                {% if order.status == "Pendiente" or order.status == "Pagado" %}
+                {% if not order.enviado and not order.entregado %}
+                <form action="{% url 'cancel_order' order.id %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Cancelar Orden</button>
+                </form>
+                {% endif %}
+                {% endif %}
+                {% if order.status == "Pendiente" %}
+                <form action="{% url 'pay_order' order.id %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">Pagar ahora</button>
+                </form>
+                {% endif %}
+                <!-- Botón para ver el detalle de la orden -->
+                <a href="{% url 'order_detail' order.id %}" class="btn btn-info">Ver Detalle</a>
+            </div>
+        </div>
     </div>
-  </div>
-  {% empty %}
-  <p class="text-center text-muted">{% trans "No has realizado compras." %}</p>
-  {% endfor %}
+    {% empty %}
+    <p>No has realizado compras.</p>
+    {% endfor %}
 </div>
-
 {% endblock %}

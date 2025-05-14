@@ -1,184 +1,123 @@
 /**
  * product_detail.js
  *
- * Maneja la selección de variantes (color/talla) y conversión de moneda
+ * Este archivo contiene la lógica para la vista de detalle de un producto,
+ * que permite actualizar la imagen principal, el precio y el variant_id en función de
+ * la selección de color y talla.
  *
- * Requiere que se inyecten estos datos desde la template:
- * - window.productConfig = {
- *     colorMap: {color_id: {image_url, price, converted_price, color_name}},
- *     variantMap: {color_id: {size_id: {variant_id, image_url, price, converted_price}}},
- *     selectedCurrency: 'USD|COP|EUR',
- *     exchangeRate: number,
- *     currencySymbol: '$|€',
- *     defaultColorId: string|null,
- *     defaultSizeId: string|null
- *   }
+ * Se espera que se inyecten dos variables globales:
+ *   - window.COLOR_MAP_JSON: Objeto JSON con datos de colores (imagen, precio, color_name)
+ *   - window.VARIANT_MAP_JSON: Objeto JSON con datos de variantes (por combinación de color y talla)
+ *
+ * Requisitos de seguridad:
+ *   - El script se aloja de forma externa en la carpeta static.
+ *   - Se ejecuta al cargar el DOM (DOMContentLoaded).
  */
 
 document.addEventListener("DOMContentLoaded", function () {
-  const config = window.productConfig;
-  const { colorMap, variantMap } = config;
+  // Datos inyectados desde la plantilla
+  const colorMap = JSON.parse(window.COLOR_MAP_JSON);
+  const variantMap = JSON.parse(window.VARIANT_MAP_JSON);
 
-  // Elementos del DOM
-  const elements = {
-    mainImage: document.getElementById("main-image"),
-    priceDisplayUSD: document.getElementById("price-display-usd"),
-    priceDisplayConverted: document.getElementById("price-display-converted"),
-    variantIdInput: document.getElementById("variant_id"),
-    addToCartBtn: document.getElementById("add-to-cart-btn"),
-    selectedColorName: document.getElementById("selected-color-name"),
-    selectedSizeName: document.getElementById("selected-size-name"),
-    sizeErrorMessage: document.getElementById("size-error-message"),
-    colorBoxes: document.querySelectorAll("#color-selection .color-box"),
-    sizeBoxes: document.querySelectorAll("#size-selection .size-box"),
-  };
+  // Referencias a elementos del DOM
+  const mainImage = document.getElementById("main-image");
+  const priceDisplay = document.getElementById("price-display");
+  const variantIdInput = document.getElementById("variant_id");
+  const addToCartBtn = document.getElementById("add-to-cart-btn");
+  const selectedColorName = document.getElementById("selected-color-name");
+  const selectedSizeName = document.getElementById("selected-size-name");
+  const errorMessage = document.getElementById("size-error-message");
 
-  // Estado actual
-  let state = {
-    selectedColorId: config.defaultColorId,
-    selectedSizeId: config.defaultSizeId,
-  };
+  let selectedColorId = null;
+  let selectedSizeId = null;
 
-  // Inicialización
-  function init() {
-    // Cargar miniaturas de color
-    Object.keys(colorMap).forEach((colorId) => {
-      const thumb = document.getElementById(`color-thumb-${colorId}`);
-      if (thumb) thumb.src = colorMap[colorId].image_url;
-    });
-
-    // Selección inicial
-    if (state.selectedColorId) {
-      selectColor(state.selectedColorId);
-      if (state.selectedSizeId) {
-        selectSize(state.selectedSizeId);
-      }
-    }
-  }
-
-  // Manejar selección de color
-  function selectColor(colorId) {
-    state.selectedColorId = colorId;
-    const colorData = colorMap[colorId];
-
-    // Actualizar UI
-    elements.colorBoxes.forEach((box) =>
-      box.classList.remove("selected-option")
-    );
-    document
-      .querySelector(`.color-box[data-color-id="${colorId}"]`)
-      ?.classList.add("selected-option");
-
-    elements.selectedColorName.textContent = colorData.color_name;
-    elements.mainImage.src = colorData.image_url;
-
-    // Actualizar precios
-    updatePriceDisplay(colorData.price, colorData.converted_price);
-
-    // Resetear talla si había una seleccionada
-    if (state.selectedSizeId) {
-      state.selectedSizeId = null;
-      elements.sizeBoxes.forEach((box) =>
-        box.classList.remove("selected-option")
-      );
-      elements.selectedSizeName.textContent = "{% trans 'Ninguna' %}";
-      elements.sizeErrorMessage.style.display = "none";
-    }
-
-    // Deshabilitar botón hasta selección de talla
-    elements.addToCartBtn.disabled = true;
-    elements.variantIdInput.value = "";
-  }
-
-  // Manejar selección de talla
-  function selectSize(sizeId) {
-    state.selectedSizeId = sizeId;
-    const sizeBox = document.querySelector(
-      `.size-box[data-size-id="${sizeId}"]`
-    );
-    const sizeValue = sizeBox?.dataset.sizeValue || "N/A";
-
-    // Actualizar UI
-    elements.sizeBoxes.forEach((box) =>
-      box.classList.remove("selected-option")
-    );
-    sizeBox?.classList.add("selected-option");
-    elements.selectedSizeName.textContent = sizeValue;
-
-    // Verificar variante disponible
-    const variant = variantMap[state.selectedColorId]?.[sizeId];
-
-    if (variant) {
-      // Actualizar imagen si es diferente
-      if (variant.image_url !== elements.mainImage.src) {
-        elements.mainImage.src = variant.image_url;
-      }
-
-      // Actualizar precios
-      updatePriceDisplay(variant.price, variant.converted_price);
-
-      // Habilitar botón
-      elements.addToCartBtn.disabled = false;
-      elements.variantIdInput.value = variant.variant_id;
-      elements.sizeErrorMessage.style.display = "none";
-    } else {
-      // Variante no disponible
-      elements.addToCartBtn.disabled = true;
-      elements.variantIdInput.value = "";
-      elements.sizeErrorMessage.style.display = "block";
-    }
-  }
-
-  // Actualizar visualización de precios
-  function updatePriceDisplay(usdPrice, convertedPrice) {
-    const formattedUSD = formatPrice(usdPrice, "USD");
-    elements.priceDisplayUSD.textContent = `${formattedUSD} USD`;
-
-    if (config.selectedCurrency !== "USD") {
-      const formattedConverted = formatPrice(
-        convertedPrice,
-        config.selectedCurrency
-      );
-      elements.priceDisplayConverted.style.display = "block";
-      elements.priceDisplayConverted.textContent = formattedConverted;
-    } else {
-      elements.priceDisplayConverted.style.display = "none";
-    }
-  }
-
-  // Formatear precio según moneda
-  function formatPrice(amount, currency) {
-    const numericAmount = parseFloat(amount) || 0;
-
-    if (currency === "USD") {
-      return `$${numericAmount.toFixed(2)}`;
-    }
-
-    const options = {
+  // Función para formatear el precio usando la configuración regional 'es-CO'
+  function formatPrice(num) {
+    let n = parseFloat(num);
+    if (isNaN(n)) n = 0;
+    return n.toLocaleString("es-CO", {
       style: "currency",
-      currency: currency,
+      currency: "COP",
       minimumFractionDigits: 0,
-      maximumFractionDigits: currency === "COP" ? 0 : 2,
-    };
-
-    return numericAmount
-      .toLocaleString("es-CO", options)
-      .replace(/^[^\d]*/, config.currencySymbol);
+      maximumFractionDigits: 0,
+    });
   }
 
-  // Event listeners
-  elements.colorBoxes.forEach((box) => {
-    box.addEventListener("click", () => selectColor(box.dataset.colorId));
-  });
+  // Llenar las miniaturas de color
+  for (const [colorId, data] of Object.entries(colorMap)) {
+    const thumb = document.getElementById(`color-thumb-${colorId}`);
+    if (thumb) {
+      thumb.src = data.image_url;
+    }
+  }
 
-  elements.sizeBoxes.forEach((box) => {
-    box.addEventListener("click", () => {
-      if (state.selectedColorId) {
-        selectSize(box.dataset.sizeId);
+  // Seleccionar por defecto el primer color (si existe)
+  const colorKeys = Object.keys(colorMap);
+  if (colorKeys.length > 0) {
+    selectedColorId = colorKeys[0];
+    selectedColorName.textContent =
+      colorMap[selectedColorId].color_name || "Color " + selectedColorId;
+    mainImage.src = colorMap[selectedColorId].image_url;
+    priceDisplay.textContent = formatPrice(colorMap[selectedColorId].price);
+    // Deshabilitar el botón hasta que se seleccione una talla (si aplica)
+    addToCartBtn.disabled = true;
+  } else {
+    priceDisplay.textContent = formatPrice("{{ product.base_price }}");
+  }
+
+  // Función para actualizar la UI (imagen, precio y variant_id)
+  function updateUI() {
+    if (selectedColorId) {
+      if (
+        selectedSizeId &&
+        variantMap[selectedColorId] &&
+        variantMap[selectedColorId][selectedSizeId]
+      ) {
+        // Si existe la combinación color+talla, usamos los datos específicos
+        const data = variantMap[selectedColorId][selectedSizeId];
+        mainImage.src = data.image_url;
+        priceDisplay.textContent = formatPrice(data.price);
+        variantIdInput.value = data.variant_id;
+        addToCartBtn.disabled = false;
+        errorMessage.style.display = "none";
+      } else {
+        // Si no se ha seleccionado talla o la combinación no existe, mostramos los datos del color
+        mainImage.src = colorMap[selectedColorId].image_url;
+        priceDisplay.textContent = formatPrice(colorMap[selectedColorId].price);
+        variantIdInput.value = "";
+        addToCartBtn.disabled = true;
+        // Si se ha seleccionado una talla inválida, se muestra el mensaje de error
+        if (
+          selectedSizeId &&
+          (!variantMap[selectedColorId] ||
+            !variantMap[selectedColorId][selectedSizeId])
+        ) {
+          errorMessage.style.display = "block";
+        } else {
+          errorMessage.style.display = "none";
+        }
       }
+    }
+  }
+
+  // Manejo de clic en los recuadros de color
+  document.querySelectorAll("#color-selection .color-box").forEach((box) => {
+    box.addEventListener("click", () => {
+      selectedColorId = box.getAttribute("data-color-id");
+      selectedColorName.textContent = box.getAttribute("data-color-name");
+      // Al cambiar de color, se resetea la selección de talla
+      selectedSizeId = null;
+      selectedSizeName.textContent = "Ninguna";
+      updateUI();
     });
   });
 
-  // Inicializar
-  init();
+  // Manejo de clic en los recuadros de talla
+  document.querySelectorAll("#size-selection .size-box").forEach((box) => {
+    box.addEventListener("click", () => {
+      selectedSizeId = box.getAttribute("data-size-id");
+      selectedSizeName.textContent = box.getAttribute("data-size-value");
+      updateUI();
+    });
+  });
 });

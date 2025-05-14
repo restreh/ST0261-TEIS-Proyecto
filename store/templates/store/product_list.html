@@ -1,44 +1,24 @@
 {% extends 'store/base.html' %}
 {% load static %}
 {% load humanize %}
-{% load i18n %}
-{% load currency_tags %}
-{% block title %}{% trans "Productos Disponibles" %}{% endblock %}
+{% block title %}Productos Disponibles{% endblock %}
 
 {% block content %}
 
 <div class="container mt-4">
-    <!-- Selector de Moneda -->
-    <div class="d-flex justify-content-end mb-3">
-        <form method="GET" action="{% url 'product_list' %}" class="d-flex">
-            <select name="currency" class="form-select me-2" style="width: auto;" onchange="this.form.submit()">
-                {% for code, name in available_currencies.items %}
-                    <option value="{{ code }}" {% if selected_currency == code %}selected{% endif %}>
-                        {{ name }} ({{ code }})
-                    </option>
-                {% endfor %}
-            </select>
-            <input type="hidden" name="q" value="{{ request.GET.q }}">
-            <input type="hidden" name="color" value="{{ request.GET.color }}">
-            <input type="hidden" name="size" value="{{ request.GET.size }}">
-            <input type="hidden" name="gender" value="{{ request.GET.gender }}">
-            <input type="hidden" name="min_price" value="{{ request.GET.min_price }}">
-            <input type="hidden" name="max_price" value="{{ request.GET.max_price }}">
-        </form>
-    </div>
 
     <form method="GET" action="{% url 'product_list' %}" class="mb-4">
         <!-- Búsqueda -->
         <div class="input-group mb-3">
-            <input type="text" class="form-control" name="q" placeholder="{% trans 'Buscar productos...' %}" value="{{ request.GET.q }}">
-            <button class="btn btn-primary" type="submit">{% trans "Buscar" %}</button>
+            <input type="text" class="form-control" name="q" placeholder="Buscar productos..." value="{{ request.GET.q }}">
+            <button class="btn btn-primary" type="submit">Buscar</button>
         </div>
 
         <!-- Filtros compactos -->
         <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
             <!-- Color -->
             <select name="color" id="color" class="form-select" style="width: auto;">
-                <option value="">{% trans "Color" %}</option>
+                <option value="">Color</option>
                 {% for color in colors %}
                     <option value="{{ color.name }}" {% if request.GET.color == color.name %}selected{% endif %}>
                         {{ color.name }}
@@ -48,7 +28,7 @@
 
             <!-- Talla -->
             <select name="size" id="size" class="form-select" style="width: auto;">
-                <option value="">{% trans "Talla" %}</option>
+                <option value="">Talla</option>
                 {% for size in sizes %}
                     <option value="{{ size.value }}" {% if request.GET.size == size.value %}selected{% endif %}>
                         {{ size.value }}
@@ -58,7 +38,7 @@
 
             <!-- Género -->
             <select name="gender" id="gender" class="form-select" style="width: auto;">
-                <option value="">{% trans "Género" %}</option>
+                <option value="">Género</option>
                 {% for value, label in genders %}
                     <option value="{{ value }}" {% if request.GET.gender == value %}selected{% endif %}>
                         {{ label }}
@@ -67,22 +47,22 @@
             </select>
 
             <!-- Precio mínimo -->
-            <input type="number" name="min_price" id="min_price" class="form-control" placeholder="{% trans 'Min $' %}" 
+            <input type="number" name="min_price" id="min_price" class="form-control" placeholder="Min $" 
                    value="{{ request.GET.min_price }}" style="max-width: 120px;">
 
             <!-- Precio máximo -->
-            <input type="number" name="max_price" id="max_price" class="form-control" placeholder="{% trans 'Max $' %}"
+            <input type="number" name="max_price" id="max_price" class="form-control" placeholder="Max $"
                    value="{{ request.GET.max_price }}" style="max-width: 120px;">
 
             <!-- Botón de Filtrar -->
-            <button type="submit" class="btn btn-primary">{% trans "Filtrar" %}</button>
+            <button type="submit" class="btn btn-primary">Filtrar</button>
             
             <!-- Botón de Limpiar -->
-            <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">{% trans "Limpiar" %}</a>
+            <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">Limpiar</a>
         </div>
     </form>
 
-    <h1 class="mb-4">{% trans "Productos Disponibles" %}</h1>
+    <h1 class="mb-4">Productos Disponibles</h1>
     <div class="row">
         {% for product in products %}
         <div class="col-md-4">
@@ -92,7 +72,7 @@
                     <img src="{{ product.get_default_image_url }}" class="card-img-top" alt="{{ product.name }}"
                         style="height: 200px; width: 100%; object-fit: contain;">
                     {% else %}
-                    <img src="#" class="card-img-top" alt="{% trans 'Sin imagen' %}"
+                    <img src="#" class="card-img-top" alt="Sin imagen"
                         style="height: 200px; width: 100%; object-fit: contain;">
                     {% endif %}
                 </a>
@@ -103,27 +83,14 @@
                         </a>
                     </h5>
                     <p class="card-text">{{ product.description|truncatewords:20 }}</p>
-                    <div class="price-container">
-                        <p class="card-text">
-                            <strong>{% trans "Precio" %}:</strong>
-                            <span class="original-price">
-                                ${{ product.base_price|floatformat:0|intcomma }} USD
-                            </span>
-                            {% if selected_currency != 'USD' %}
-                            <br>
-                            <span class="converted-price">
-                                {{ selected_currency|currency_symbol }}{{ product.base_price|multiply:exchange_rate|floatformat:0|intcomma }} {{ selected_currency }}
-                            </span>
-                            {% endif %}
-                        </p>
-                    </div>
+                    <p class="card-text"><strong>Precio:</strong> ${{ product.base_price|floatformat:0|intcomma }}</p>
                     <div class="mt-auto d-flex justify-content-between align-items-center">
                         <form action="{% url 'add_to_cart' product.id %}" method="post" class="flex-grow-1 me-2">
                             {% csrf_token %}
                             <div class="input-group">
                                 <input type="number" name="quantity" value="1" min="1" class="form-control"
                                     style="max-width: 80px;">
-                                <button class="btn btn-success" type="submit">{% trans "Añadir al carrito" %}</button>
+                                <button class="btn btn-success" type="submit">Añadir al carrito</button>
                             </div>
                         </form>
                         {% if user.is_authenticated %}
@@ -132,7 +99,7 @@
                             <button type="submit"
                                 style="color: #ccc; background: transparent; border: none; font-size: 1.5rem; transition: color 0.3s ease;"
                                 onmouseover="this.style.color='red'" onmouseout="this.style.color='#ccc'"
-                                title="{% trans 'Agregar a Favoritos' %}">
+                                title="Agregar a Favoritos">
                                 &#9829;
                             </button>
                         </form>
@@ -142,144 +109,8 @@
             </div>
         </div>
         {% empty %}
-        <div class="col-12">
-            <div class="alert alert-info">{% trans "No hay productos disponibles." %}</div>
-        </div>
+        <p>No hay productos disponibles.</p>
         {% endfor %}
     </div>
-
-    <!-- Paginación -->
-    {% if is_paginated %}
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                    {% trans "Primera" %}
-                </a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                    &laquo;
-                </a>
-            </li>
-            {% endif %}
-
-            {% for num in page_obj.paginator.page_range %}
-            {% if page_obj.number == num %}
-            <li class="page-item active">
-                <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                    {{ num }}
-                </a>
-            </li>
-            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                    {{ num }}
-                </a>
-            </li>
-            {% endif %}
-            {% endfor %}
-
-            {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                    &raquo;
-                </a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                    {% trans "Última" %}
-                </a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
 </div>
-
-<style>
-    body {
-        background-color: #f8f9fa;
-    }
-
-    h1.page-title {
-        font-size: 3rem;
-        font-weight: 800;
-        color: #2c3e50;
-        text-align: center;
-        margin-bottom: 2rem;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    .card {
-        border: none;
-        border-radius: 15px;
-        transition: all 0.3s ease-in-out;
-    }
-
-    .card:hover {
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-        transform: scale(1.02);
-    }
-
-    .card-title {
-        font-weight: bold;
-        color: #34495e;
-    }
-
-    .btn-success {
-        background-color: #27ae60;
-        border-color: #27ae60;
-    }
-
-    .btn-success:hover {
-        background-color: #219150;
-        border-color: #219150;
-    }
-
-    .form-select,
-    .form-control {
-        border-radius: 10px;
-    }
-
-    .pagination .page-link {
-        border-radius: 50%;
-        margin: 0 5px;
-        color: #2c3e50;
-    }
-
-    .pagination .active .page-link {
-        background-color: #2c3e50;
-        border-color: #2c3e50;
-        color: white;
-    }
-
-    .converted-price {
-        color: #888;
-        font-size: 0.9rem;
-    }
-
-    .price-container {
-        min-height: 60px;
-    }
-
-    .original-price {
-        color: #2a5885;
-        font-weight: bold;
-    }
-
-    .filters-container {
-        background-color: #fff;
-        padding: 1.5rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    }
-
-    .currency-selector {
-        max-width: 250px;
-    }
-</style>
-
 {% endblock %}
