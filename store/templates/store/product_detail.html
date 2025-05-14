@@ -1,5 +1,7 @@
-{% extends 'store/base.html' %} {% load static %} {% load i18n %} {% block
-content %}
+{% extends 'store/base.html' %}
+{% load static %} 
+{% load i18n %} 
+{% block content %}
 
 <div class="container mt-4">
   <h1>{{ product.name }}</h1>
@@ -37,7 +39,7 @@ content %}
         {% for c in colors %}
         <div
           class="color-box me-2 text-center border p-2"
-          style="width: 80px; cursor: pointer"
+          style="width: max-content; cursor: pointer"
           data-color-id="{{ c.color__id }}"
           data-color-name="{{ c.color__name }}"
         >
@@ -45,7 +47,7 @@ content %}
             id="color-thumb-{{ c.color__id }}"
             src="#"
             alt="{% trans 'thumb' %}"
-            style="width: 60px; height: 60px; object-fit: cover"
+            style="width: max-content; height: 60px; object-fit: cover"
           />
           <p class="mb-0" style="font-size: 1rem">{{ c.color__name }}</p>
         </div>

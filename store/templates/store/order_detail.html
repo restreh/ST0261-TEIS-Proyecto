@@ -1,5 +1,8 @@
-{% extends 'store/base.html' %} {% load i18n %} {% block title %} {% trans
-"Detalle de Orden" %} #{{ order.id }} {% endblock %} {% block content %}
+{% extends 'store/base.html' %} 
+{% load i18n %} 
+{% block title %}{% trans "Detalle de Orden" %} #{{ order.id }} {% endblock %} 
+{% block content %}
+
 <style>
   .order-container {
     background-color: #fff;
@@ -25,6 +28,10 @@
   .status-enviado {
     color: orange;
   }
+
+  .status-cancelado {
+    color: red;
+  } 
 
   .order-item-card {
     border-radius: 0.5rem;
@@ -92,6 +99,8 @@
     <span class="status-entregado">{% trans "Entregado" %}</span>
     {% elif order.enviado %}
     <span class="status-enviado">{% trans "Enviado" %}</span>
+    {% elif order.status == "Cancelado" %}
+    <span class="status-cancelado">{% trans "Cancelado" %}</span>
     {% else %} {{ order.status }} {% endif %}
   </p>
   <p>
@@ -104,29 +113,37 @@
   <h3 class="mt-4">{% trans "Productos en la Orden" %}</h3>
 
   {% for obj in order_items %}
-  <div class="order-item-card">
-    <div class="order-item-details">
-      <p><strong>{{ obj.product.name }}</strong></p>
-      {% if obj.color %}
-      <p>{% trans "Color" %}: {{obj.color.name}}</p>
-      {% endif %} {% if obj.size %}
-      <p>{% trans "Talla" %}: {{obj.size.value}}</p>
-      {% endif %}
-      <p>{% trans "Cantidad" %}: {{obj.quantity}}</p>
-      <p>
-        {% trans "Precio unitario" %}: ${{obj.purchase_price|floatformat:2}}
-      </p>
-      <p>{% trans "Subtotal" %}: ${{ obj.subtotal|floatformat:2 }}</p>
-    </div>
-    <div class="order-item-image">
-      {% if obj.product.images.first %}
-      <img
-        src="{{ obj.product.images.first.image.url }}"
-        alt="{{ obj.product.name }}"
-      />
-      {% endif %}
-    </div>
-  </div>
+    {% with order_item=obj.item %}
+      {% with variant=order_item.item %}
+      <div class="order-item-card">
+        <div class="order-item-details">
+          <p><strong>{{ variant.product.name }}</strong></p>
+
+          {% if variant.color %}
+            <p>{% trans "Color" %}: {{ variant.color.name }}</p>
+          {% endif %}
+          {% if variant.size %}
+            <p>{% trans "Talla" %}: {{ variant.size.value }}</p>
+          {% endif %}
+
+          <p>{% trans "Cantidad" %}: {{ order_item.quantity }}</p>
+          <p>
+            {% trans "Precio unitario" %}:
+            ${{ order_item.purchase_price|floatformat:2 }}
+          </p>
+          <p>
+            {% trans "Subtotal" %}: ${{ obj.subtotal|floatformat:2 }}
+          </p>
+        </div>
+        <div class="order-item-image">
+          {% if variant.images.first %}
+            <img src="{{ variant.images.first.image.url }}"
+                 alt="{{ variant.product.name }}" />
+          {% endif %}
+        </div>
+      </div>
+      {% endwith %}
+    {% endwith %}
   {% endfor %}
 
   <div class="mt-4 btn-group-footer">

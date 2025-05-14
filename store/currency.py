@@ -1,4 +1,3 @@
-# store/services.py
 from decimal import Decimal
 from django.conf import settings
 from django.core.cache import cache

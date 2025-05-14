@@ -21,12 +21,14 @@ from django.views.generic import ListView, TemplateView, DetailView
 from django.views.generic.edit import FormView, CreateView, UpdateView, DeleteView
 
 from .forms import RegistrationForm, ProductReviewForm
+from store.interfaces.cart import CartServiceInterface
+from store.services.cart_session import SessionCartService
 from .models import (
     Order, OrderItem, Payment, Product, ProductVariant, ProductReview, Color, Size
 )
 
 from django.utils.translation import gettext as _
-from .services import get_exchange_rate
+from .currency import get_exchange_rate
 
 
 # ============================================================================
@@ -213,133 +215,125 @@ class ProductDetailView(DetailView):
 # Vistas relacionadas con el Carrito
 # ============================================================================
 
-class CartMixin:
-    """Mixin para obtener y guardar el carrito en la sesión."""
-    def get_cart(self, request):
-        return request.session.get('cart', {})
+class AddToCartView(View):
+    cart_service: CartServiceInterface = SessionCartService()
 
-    def save_cart(self, request, cart):
-        request.session['cart'] = cart
-        request.session.modified = True
-
-
-class AddToCartView(View, CartMixin):
     def post(self, request, product_id):
         variant_id = request.POST.get('variant_id')
-        quantity = request.POST.get('quantity', 1)
         try:
-            quantity = int(quantity)
+            quantity = int(request.POST.get('quantity', 1))
         except ValueError:
             quantity = 1
         if quantity < 1:
             quantity = 1
 
+        # Calcular precio según variante o producto base
         if variant_id:
             variant = get_object_or_404(ProductVariant, id=variant_id)
             price = variant.price_override if variant.price_override else variant.product.base_price
-            key = f"variant-{variant_id}"
         else:
             product = get_object_or_404(Product, id=product_id)
             price = product.base_price
-            key = str(product_id)
 
-        cart = self.get_cart(request)
-        if key in cart:
-            cart[key]['quantity'] += quantity
-        else:
-            cart[key] = {'quantity': quantity, 'price': str(price)}
-        self.save_cart(request, cart)
+        # Delegar lógica de carrito al servicio
+        self.cart_service.add(
+            request,
+            variant_id=variant_id,
+            product_id=product_id,
+            quantity=quantity,
+            price=price
+        )
         return redirect('cart_detail')
 
 
-class RemoveFromCartView(View, CartMixin):
+class RemoveFromCartView(View):
+    cart_service: CartServiceInterface = SessionCartService()
+
     def post(self, request, product_id):
-        product = get_object_or_404(Product, id=product_id)
+        variant_id = request.POST.get('variant_id')
         try:
             quantity = int(request.POST.get('quantity', 1))
         except ValueError:
             quantity = 1
+        if quantity < 1:
+            quantity = 1
 
-        cart = self.get_cart(request)
-        key = str(product_id)
-        if key in cart:
-            if quantity >= cart[key]['quantity']:
-                del cart[key]
-            else:
-                cart[key]['quantity'] -= quantity
-            self.save_cart(request, cart)
+        # Delegar eliminación al servicio
+        self.cart_service.remove(
+            request,
+            variant_id=variant_id,
+            product_id=product_id,
+            quantity=quantity
+        )
         return redirect('cart_detail')
 
 
-class CartDetailView(TemplateView, CartMixin):
+class CartDetailView(TemplateView):
     template_name = 'store/cart_detail.html'
+    cart_service: CartServiceInterface = SessionCartService()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        cart = self.get_cart(self.request)
-        
-        # ==============================================
+        # Obtener carrito crudo desde servicio
+        cart = self.cart_service.get(self.request)
+
+        # ====================================================================
         # Manejo de moneda y conversión
-        # ==============================================
-        selected_currency = self.request.GET.get('currency') or self.request.session.get('currency', 'COP')
+        # ====================================================================
+        selected_currency = (
+            self.request.GET.get('currency') or
+            self.request.session.get('currency', 'COP')
+        )
         if selected_currency not in settings.CURRENCIES:
             selected_currency = 'USD'
         self.request.session['currency'] = selected_currency
-        
+
         exchange_rate = get_exchange_rate('USD', selected_currency)
-        
-        # ==============================================
+
+        # ====================================================================
         # Procesamiento del carrito con conversión
-        # ==============================================
+        # ====================================================================
         items = []
         total_usd = Decimal('0.00')
         total_converted = Decimal('0.00')
-        
+
         for key, details in cart.items():
             quantity = details['quantity']
             price_usd = Decimal(details['price'])
             subtotal_usd = price_usd * quantity
-            
-            # Calcular precios convertidos
+
+            # Precios convertidos
             price_converted = price_usd * exchange_rate
             subtotal_converted = subtotal_usd * exchange_rate
-            
-            if key.startswith("variant-"):
-                variant_id = key.split("-")[1]
+
+            if key.startswith('variant-'):
+                variant_id = int(key.split('-')[1])
                 variant = get_object_or_404(ProductVariant, id=variant_id)
                 product = variant.product
-                
-                items.append({
-                    'variant': variant,
-                    'product': product,
-                    'quantity': quantity,
-                    'price_usd': price_usd,
-                    'price_converted': price_converted,
-                    'subtotal_usd': subtotal_usd,
-                    'subtotal_converted': subtotal_converted,
-                    'has_variant': True
-                })
+                has_variant = True
             else:
                 product_id = int(key)
+                variant = None
                 product = get_object_or_404(Product, id=product_id)
-                
-                items.append({
-                    'variant': None,
-                    'product': product,
-                    'quantity': quantity,
-                    'price_usd': price_usd,
-                    'price_converted': price_converted,
-                    'subtotal_usd': subtotal_usd,
-                    'subtotal_converted': subtotal_converted,
-                    'has_variant': False
-                })
-            
+                has_variant = False
+
+            items.append({
+                'variant': variant,
+                'product': product,
+                'quantity': quantity,
+                'price_usd': price_usd,
+                'price_converted': price_converted,
+                'subtotal_usd': subtotal_usd,
+                'subtotal_converted': subtotal_converted,
+                'has_variant': has_variant,
+            })
+
             total_usd += subtotal_usd
             total_converted += subtotal_converted
-        
-        # ==============================================
+
+        # ====================================================================
         # Configuración del contexto
-        # ==============================================
+        # ====================================================================
         context.update({
             'cart_items': items,
             'total_usd': total_usd,
@@ -349,7 +343,7 @@ class CartDetailView(TemplateView, CartMixin):
             'exchange_rate': exchange_rate,
             'currency_symbol': '€' if selected_currency == 'EUR' else '$'
         })
-        
+
         return context
 
 

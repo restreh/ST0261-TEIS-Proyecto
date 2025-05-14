@@ -1,6 +1,5 @@
-# store/context_processors.py
 from django.conf import settings
-from .services import get_exchange_rate
+from .currency import get_exchange_rate
 
 def currency_context(request):
     selected_currency = request.session.get('currency', 'USD')

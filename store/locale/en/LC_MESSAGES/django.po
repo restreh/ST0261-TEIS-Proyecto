@@ -2,13 +2,13 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
+# 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-13 19:35-0500\n"
+"POT-Creation-Date: 2025-05-14 02:51-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,590 +18,590 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: .\store\admin.py:82
+#: store/admin.py:82
 msgid ""
 "No se pueden actualizar los estados de una orden cancelada o pendiente de "
 "pago."
 msgstr "Cannot update status of a canceled or pending payment order."
 
-#: .\store\admin.py:95
+#: store/admin.py:95
 #, python-brace-format
 msgid ""
 "Stock insuficiente para {variant.product.name} (Disponible: {variant.stock})."
 msgstr ""
 "Insufficient stock for {variant.product.name} (Available: {variant.stock})."
 
-#: .\store\admin.py:101
+#: store/admin.py:101
 msgid "Orden marcada como 'Enviado' y stock descontado."
 msgstr "Order marked as 'Shipped' and stock deducted."
 
-#: .\store\admin.py:103
+#: store/admin.py:103
 msgid "Orden marcada como 'Entregado'."
 msgstr "Order marked as 'Delivered'."
 
-#: .\store\models.py:13 .\store\models.py:51
+#: store/models.py:13 store/models.py:51
 msgid "Nombre"
 msgstr "Name"
 
-#: .\store\models.py:19 .\store\models.py:80
-#: .\store\templates\store\cart_detail.html:49
-#: .\store\templates\store\order_detail.html:29
-#: .\store\templates\store\product_list.html:41
+#: store/models.py:19 store/models.py:80
+#: store/templates/store/cart_detail.html:49
+#: store/templates/store/order_detail.html:114
+#: store/templates/store/product_list.html:41
 msgid "Color"
 msgstr "Color"
 
-#: .\store\models.py:20
+#: store/models.py:20
 msgid "Colores"
 msgstr "Colors"
 
-#: .\store\models.py:26
+#: store/models.py:26
 msgid "Ropa"
 msgstr "Clothing"
 
-#: .\store\models.py:27
+#: store/models.py:27
 msgid "Calzado"
 msgstr "Shoes"
 
-#: .\store\models.py:30
+#: store/models.py:30
 msgid "Tipo de talla"
 msgstr "Size type"
 
-#: .\store\models.py:31
+#: store/models.py:31
 msgid "Valor"
 msgstr "Value"
 
-#: .\store\models.py:38 .\store\models.py:81
-#: .\store\templates\store\cart_detail.html:52
-#: .\store\templates\store\order_detail.html:32
-#: .\store\templates\store\product_list.html:51
+#: store/models.py:38 store/models.py:81
+#: store/templates/store/cart_detail.html:52
+#: store/templates/store/order_detail.html:116
+#: store/templates/store/product_list.html:51
 msgid "Talla"
 msgstr "Size"
 
-#: .\store\models.py:39
+#: store/models.py:39
 msgid "Tallas"
 msgstr "Sizes"
 
-#: .\store\models.py:46
+#: store/models.py:46
 msgid "Masculino"
 msgstr "Male"
 
-#: .\store\models.py:47
+#: store/models.py:47
 msgid "Femenino"
 msgstr "Female"
 
-#: .\store\models.py:48
+#: store/models.py:48
 msgid "Unisex"
 msgstr "Unisex"
 
-#: .\store\models.py:52 .\store\templates\store\product_list.html:61
+#: store/models.py:52 store/templates/store/product_list.html:61
 msgid "Género"
 msgstr "Gender"
 
-#: .\store\models.py:53 .\store\templates\store\product_detail.html:24
+#: store/models.py:53 store/templates/store/product_detail.html:26
 msgid "Descripción"
 msgstr "Description"
 
-#: .\store\models.py:54 .\store\templates\store\product_detail.html:26
+#: store/models.py:54 store/templates/store/product_detail.html:28
 msgid "Materiales"
 msgstr "Materials"
 
-#: .\store\models.py:55 .\store\templates\store\product_detail.html:28
+#: store/models.py:55 store/templates/store/product_detail.html:30
 msgid "Guía de cuidado"
 msgstr "Care Guide"
 
-#: .\store\models.py:56
+#: store/models.py:56
 msgid "Precio base"
 msgstr "Base price"
 
-#: .\store\models.py:74 .\store\models.py:78
-#: .\store\templates\store\cart_detail.html:28 .\store\views.py:607
+#: store/models.py:74 store/models.py:78
+#: store/templates/store/cart_detail.html:28 store/views.py:601
 msgid "Producto"
 msgstr "Product"
 
-#: .\store\models.py:75
+#: store/models.py:75
 msgid "Productos"
 msgstr "Products"
 
-#: .\store\models.py:79
+#: store/models.py:79
 msgid "SKU"
 msgstr "SKU"
 
-#: .\store\models.py:82
+#: store/models.py:82
 msgid "Stock"
 msgstr "Stock"
 
-#: .\store\models.py:83
+#: store/models.py:83
 msgid "Precio especial"
 msgstr "Special price"
 
-#: .\store\models.py:97
+#: store/models.py:97
 msgid "El stock no puede ser negativo"
 msgstr "Stock cannot be negative"
 
-#: .\store\models.py:103
+#: store/models.py:103
 msgid "Variante de Producto"
 msgstr "Product Variant"
 
-#: .\store\models.py:104
+#: store/models.py:104
 msgid "Variantes de Producto"
 msgstr "Product Variants"
 
-#: .\store\models.py:107
+#: store/models.py:107
 msgid "Variante"
 msgstr "Variant"
 
-#: .\store\models.py:108
+#: store/models.py:108
 msgid "Imagen"
 msgstr "Image"
 
-#: .\store\models.py:109
+#: store/models.py:109
 msgid "Por defecto"
 msgstr "Default"
 
-#: .\store\models.py:115
+#: store/models.py:115
 msgid "Imagen de Producto"
 msgstr "Product Image"
 
-#: .\store\models.py:116
+#: store/models.py:116
 msgid "Imágenes de Producto"
 msgstr "Product Images"
 
-#: .\store\models.py:120
+#: store/models.py:120
 msgid "Dirección"
 msgstr "Address"
 
-#: .\store\models.py:121
+#: store/models.py:121
 msgid "Teléfono"
 msgstr "Phone"
 
-#: .\store\models.py:122
+#: store/models.py:122
 msgid "Lista de Deseados"
 msgstr "Wishlist"
 
-#: .\store\models.py:138
+#: store/models.py:138
 msgid "ID de transacción"
 msgstr "Transaction ID"
 
-#: .\store\models.py:139
+#: store/models.py:139
 msgid "Monto"
 msgstr "Amount"
 
-#: .\store\models.py:140
+#: store/models.py:140
 msgid "Fecha de pago"
 msgstr "Payment date"
 
-#: .\store\models.py:141 .\store\models.py:156
-#: .\store\templates\store\order_detail.html:11
-#: .\store\templates\store\order_list.html:21
+#: store/models.py:141 store/models.py:156
+#: store/templates/store/order_detail.html:93
+#: store/templates/store/order_list.html:80
 msgid "Estado"
 msgstr "Status"
 
-#: .\store\models.py:141 .\store\models.py:148 .\store\models.py:156
-#: .\store\views.py:426 .\store\views.py:464
+#: store/models.py:141 store/models.py:148 store/models.py:156
+#: store/views.py:420 store/views.py:458
 msgid "Pendiente"
 msgstr "Pending"
 
-#: .\store\models.py:149 .\store\views.py:469 .\store\views.py:472
+#: store/models.py:149 store/views.py:463 store/views.py:466
 msgid "Pagado"
 msgstr "Paid"
 
-#: .\store\models.py:150 .\store\views.py:455
+#: store/models.py:150 store/views.py:449
 msgid "Cancelado"
 msgstr "Canceled"
 
-#: .\store\models.py:153
+#: store/models.py:153
 msgid "Fecha de la Orden"
 msgstr "Order date"
 
-#: .\store\models.py:154 .\store\templates\store\cart_detail.html:86
-#: .\store\templates\store\order_detail.html:10
-#: .\store\templates\store\order_list.html:20
+#: store/models.py:154 store/templates/store/cart_detail.html:86
+#: store/templates/store/order_detail.html:91
+#: store/templates/store/order_list.html:79
 msgid "Total"
 msgstr "Total"
 
-#: .\store\models.py:157 .\store\templates\store\order_list.html:31
+#: store/models.py:157 store/templates/store/order_list.html:92
 msgid "Dirección de envío"
 msgstr "Shipping address"
 
-#: .\store\models.py:158 .\store\templates\store\order_detail.html:15
-#: .\store\templates\store\order_list.html:27
+#: store/models.py:158 store/templates/store/order_detail.html:97
+#: store/templates/store/order_list.html:86
 msgid "Enviado"
 msgstr "Shipped"
 
-#: .\store\models.py:159 .\store\templates\store\order_detail.html:13
-#: .\store\templates\store\order_list.html:24
+#: store/models.py:159 store/templates/store/order_detail.html:95
+#: store/templates/store/order_list.html:83
 msgid "Entregado"
 msgstr "Delivered"
 
-#: .\store\models.py:165
+#: store/models.py:165
 msgid "Orden de Compra"
 msgstr "Purchase Order"
 
-#: .\store\models.py:166
+#: store/models.py:166
 msgid "Órdenes de Compra"
 msgstr "Purchase Orders"
 
-#: .\store\models.py:171 .\store\templates\store\cart_detail.html:30
-#: .\store\templates\store\order_detail.html:34
-#: .\store\templates\store\product_detail.html:86 .\store\views.py:608
+#: store/models.py:171 store/templates/store/cart_detail.html:30
+#: store/templates/store/order_detail.html:118
+#: store/templates/store/product_detail.html:88 store/views.py:602
 msgid "Cantidad"
 msgstr "Quantity"
 
-#: .\store\models.py:172
+#: store/models.py:172
 msgid "Precio de compra"
 msgstr "Purchase price"
 
-#: .\store\models.py:180
+#: store/models.py:180
 msgid "Comentario"
 msgstr "Comment"
 
-#: .\store\models.py:181
+#: store/models.py:181
 msgid "Calificación"
 msgstr "Rating"
 
-#: .\store\models.py:182
+#: store/models.py:182
 msgid "Fecha de creación"
 msgstr "Creation date"
 
-#: .\store\models.py:188
+#: store/models.py:188
 msgid "Reseña de Producto"
 msgstr "Product Review"
 
-#: .\store\models.py:189
+#: store/models.py:189
 msgid "Reseñas de Producto"
 msgstr "Product Reviews"
 
-#: .\store\templates\store\base.html:91
+#: store/templates/store/base.html:109
 msgid "Carrito"
 msgstr "Cart"
 
-#: .\store\templates\store\base.html:98
-#: .\store\templates\store\wish_list.html:3
+#: store/templates/store/base.html:116 store/templates/store/wish_list.html:3
 msgid "Favoritos"
 msgstr "Wishlist"
 
-#: .\store\templates\store\base.html:103
-#: .\store\templates\store\order_list.html:4
+#: store/templates/store/base.html:121 store/templates/store/order_list.html:3
+#: store/templates/store/order_list.html:65
 msgid "Mis Compras"
 msgstr "My Orders"
 
-#: .\store\templates\store\base.html:115
+#: store/templates/store/base.html:133
 msgid "Cerrar sesión"
 msgstr "Logout"
 
-#: .\store\templates\store\base.html:122
+#: store/templates/store/base.html:140
 msgid "Iniciar sesión"
 msgstr "Login"
 
-#: .\store\templates\store\base.html:127
-#: .\store\templates\store\registration.html:8
-#: .\store\templates\store\registration.html:13
+#: store/templates/store/base.html:145
+#: store/templates/store/registration.html:3
+#: store/templates/store/registration.html:10
+#: store/templates/store/registration.html:15
 msgid "Registrarse"
 msgstr "Register"
 
-#: .\store\templates\store\cart_detail.html:5
-#: .\store\templates\store\cart_detail.html:11
+#: store/templates/store/cart_detail.html:5
+#: store/templates/store/cart_detail.html:11
 msgid "Carrito de Compras"
 msgstr "Shopping Cart"
 
-#: .\store\templates\store\cart_detail.html:29
+#: store/templates/store/cart_detail.html:29
 #, fuzzy
 #| msgid "Ver Detalle"
 msgid "Detalles"
 msgstr "View Details"
 
-#: .\store\templates\store\cart_detail.html:31 .\store\views.py:609
+#: store/templates/store/cart_detail.html:31 store/views.py:603
 msgid "Precio Unitario"
 msgstr "Unit Price"
 
-#: .\store\templates\store\cart_detail.html:32
-#: .\store\templates\store\order_detail.html:36 .\store\views.py:610
+#: store/templates/store/cart_detail.html:32
+#: store/templates/store/order_detail.html:122 store/views.py:604
 msgid "Subtotal"
 msgstr "Subtotal"
 
-#: .\store\templates\store\cart_detail.html:33
+#: store/templates/store/cart_detail.html:33
 msgid "Acciones"
 msgstr "Actions"
 
-#: .\store\templates\store\cart_detail.html:76
-#: .\store\templates\store\product_detail.html:131
-#: .\store\templates\store\review_confirm_delete.html:11
+#: store/templates/store/cart_detail.html:76
+#: store/templates/store/product_detail.html:133
+#: store/templates/store/review_confirm_delete.html:11
 msgid "Eliminar"
 msgstr "Remove"
 
-#: .\store\templates\store\cart_detail.html:100
+#: store/templates/store/cart_detail.html:100
 msgid "Continuar Comprando"
 msgstr "Continue Shopping"
 
-#: .\store\templates\store\cart_detail.html:105
+#: store/templates/store/cart_detail.html:105
 msgid "Comprar"
 msgstr "Checkout"
 
-#: .\store\templates\store\cart_detail.html:112
+#: store/templates/store/cart_detail.html:112
 #, fuzzy
 #| msgid "Tu carrito está vacío"
 msgid "Tu carrito está vacío."
 msgstr "Your cart is empty"
 
-#: .\store\templates\store\cart_detail.html:116
+#: store/templates/store/cart_detail.html:116
 msgid "Ir a la Tienda"
 msgstr ""
 
-#: .\store\templates\store\order_detail.html:4
-#: .\store\templates\store\order_detail.html:8
+#: store/templates/store/order_detail.html:3
+#: store/templates/store/order_detail.html:85
 msgid "Detalle de Orden"
 msgstr "Order Details"
 
-#: .\store\templates\store\order_detail.html:9
-#: .\store\templates\store\order_list.html:18
+#: store/templates/store/order_detail.html:89
+#: store/templates/store/order_list.html:77
 msgid "Fecha"
 msgstr "Date"
 
-#: .\store\templates\store\order_detail.html:20
+#: store/templates/store/order_detail.html:101
 msgid "Dirección de Envío"
 msgstr "Shipping Address"
 
-#: .\store\templates\store\order_detail.html:22
+#: store/templates/store/order_detail.html:107
 msgid "Productos en la Orden"
 msgstr "Order Items"
 
-#: .\store\templates\store\order_detail.html:35
+#: store/templates/store/order_detail.html:120
 msgid "Precio unitario"
 msgstr "Unit Price"
 
-#: .\store\templates\store\order_detail.html:49
+#: store/templates/store/order_detail.html:137
 msgid "Volver a Mis Compras"
 msgstr "Back to My Orders"
 
-#: .\store\templates\store\order_detail.html:52
+#: store/templates/store/order_detail.html:140
 msgid "Descargar PDF"
 msgstr "Download PDF"
 
-#: .\store\templates\store\order_list.html:14
+#: store/templates/store/order_list.html:72
 msgid "Orden"
 msgstr "Order"
 
-#: .\store\templates\store\order_list.html:54
+#: store/templates/store/order_list.html:112
 msgid "Cancelar Orden"
 msgstr "Cancel Order"
 
-#: .\store\templates\store\order_list.html:65
+#: store/templates/store/order_list.html:119
 msgid "Pagar ahora"
 msgstr "Pay Now"
 
-#: .\store\templates\store\order_list.html:71
-#: .\store\templates\store\wish_list.html:26
+#: store/templates/store/order_list.html:127
+#: store/templates/store/wish_list.html:78
 msgid "Ver Detalle"
 msgstr "View Details"
 
-#: .\store\templates\store\order_list.html:77
+#: store/templates/store/order_list.html:133
 msgid "No has realizado compras."
 msgstr "You haven't made any purchases yet."
 
-#: .\store\templates\store\product_detail.html:21
-#: .\store\templates\store\product_list.html:108
+#: store/templates/store/product_detail.html:23
+#: store/templates/store/product_list.html:108
 msgid "Precio"
 msgstr "Price"
 
-#: .\store\templates\store\product_detail.html:33
+#: store/templates/store/product_detail.html:35
 msgid "COLOR"
 msgstr "COLOR"
 
-#: .\store\templates\store\product_detail.html:34
+#: store/templates/store/product_detail.html:36
 msgid "Ninguno"
 msgstr "None"
 
-#: .\store\templates\store\product_detail.html:47
+#: store/templates/store/product_detail.html:49
 msgid "thumb"
 msgstr "thumbnail"
 
-#: .\store\templates\store\product_detail.html:57
+#: store/templates/store/product_detail.html:59
 msgid "TALLA"
 msgstr "SIZE"
 
-#: .\store\templates\store\product_detail.html:58
+#: store/templates/store/product_detail.html:60
 msgid "Ninguna"
 msgstr "None"
 
-#: .\store\templates\store\product_detail.html:73
+#: store/templates/store/product_detail.html:75
 msgid "No se encuentra disponible en esta talla"
 msgstr "Not available in this size"
 
-#: .\store\templates\store\product_detail.html:104
+#: store/templates/store/product_detail.html:106
 msgid "Añadir al Carrito"
 msgstr "Add to Cart"
 
-#: .\store\templates\store\product_detail.html:112
+#: store/templates/store/product_detail.html:114
 msgid "Reseñas"
 msgstr "Reviews"
 
-#: .\store\templates\store\product_detail.html:126
+#: store/templates/store/product_detail.html:128
 msgid "Editar"
 msgstr "Edit"
 
-#: .\store\templates\store\product_detail.html:138
+#: store/templates/store/product_detail.html:140
 msgid "No hay reseñas aún."
 msgstr "No reviews yet."
 
-#: .\store\templates\store\product_detail.html:142
+#: store/templates/store/product_detail.html:144
 msgid "Editar tu Reseña"
 msgstr "Edit Your Review"
 
-#: .\store\templates\store\product_detail.html:151
-#: .\store\templates\store\review_form.html:12
+#: store/templates/store/product_detail.html:153
+#: store/templates/store/review_form.html:12
 msgid "Actualizar"
 msgstr "Update"
 
-#: .\store\templates\store\product_list.html:6
-#: .\store\templates\store\product_list.html:85
+#: store/templates/store/product_list.html:6
+#: store/templates/store/product_list.html:85
 msgid "Productos Disponibles"
 msgstr "Available Products"
 
-#: .\store\templates\store\product_list.html:33
+#: store/templates/store/product_list.html:33
 msgid "Buscar productos..."
 msgstr "Search products..."
 
-#: .\store\templates\store\product_list.html:34
+#: store/templates/store/product_list.html:34
 msgid "Buscar"
 msgstr "Search"
 
-#: .\store\templates\store\product_list.html:70
+#: store/templates/store/product_list.html:70
 msgid "Min $"
 msgstr "Min $"
 
-#: .\store\templates\store\product_list.html:74
+#: store/templates/store/product_list.html:74
 msgid "Max $"
 msgstr "Max $"
 
-#: .\store\templates\store\product_list.html:78
+#: store/templates/store/product_list.html:78
 msgid "Filtrar"
 msgstr "Filter"
 
-#: .\store\templates\store\product_list.html:81
+#: store/templates/store/product_list.html:81
 msgid "Limpiar"
 msgstr "Clear"
 
-#: .\store\templates\store\product_list.html:95
-#: .\store\templates\store\wish_list.html:15
+#: store/templates/store/product_list.html:95
+#: store/templates/store/wish_list.html:61
 msgid "Sin imagen"
 msgstr "No image"
 
-#: .\store\templates\store\product_list.html:126
+#: store/templates/store/product_list.html:126
 msgid "Añadir al carrito"
 msgstr "Add to cart"
 
-#: .\store\templates\store\product_list.html:135
+#: store/templates/store/product_list.html:135
 msgid "Agregar a Favoritos"
 msgstr "Add to Wishlist"
 
-#: .\store\templates\store\product_list.html:146
+#: store/templates/store/product_list.html:146
 msgid "No hay productos disponibles."
 msgstr "No products available."
 
-#: .\store\templates\store\product_list.html:158
+#: store/templates/store/product_list.html:158
 msgid "Primera"
 msgstr ""
 
-#: .\store\templates\store\product_list.html:192
+#: store/templates/store/product_list.html:192
 msgid "Última"
 msgstr ""
 
-#: .\store\templates\store\review_confirm_delete.html:3
-#: .\store\templates\store\review_confirm_delete.html:7
+#: store/templates/store/review_confirm_delete.html:3
+#: store/templates/store/review_confirm_delete.html:7
 msgid "Eliminar Reseña"
 msgstr "Delete Review"
 
-#: .\store\templates\store\review_confirm_delete.html:8
+#: store/templates/store/review_confirm_delete.html:8
 msgid "¿Estás seguro de que deseas eliminar esta reseña?"
 msgstr "Are you sure you want to delete this review?"
 
-#: .\store\templates\store\review_confirm_delete.html:12
+#: store/templates/store/review_confirm_delete.html:12
 msgid "Cancelar"
 msgstr "Cancel"
 
-#: .\store\templates\store\review_form.html:3
-#: .\store\templates\store\review_form.html:7
+#: store/templates/store/review_form.html:3
+#: store/templates/store/review_form.html:7
 msgid "Editar Reseña"
 msgstr "Edit Review"
 
-#: .\store\templates\store\review_form.html:3
-#: .\store\templates\store\review_form.html:7
+#: store/templates/store/review_form.html:3
+#: store/templates/store/review_form.html:7
 msgid "Nueva Reseña"
 msgstr "New Review"
 
-#: .\store\templates\store\review_form.html:12
+#: store/templates/store/review_form.html:12
 msgid "Enviar"
 msgstr "Submit"
 
-#: .\store\templates\store\wish_list.html:5
+#: store/templates/store/wish_list.html:42
 msgid "Mis Favoritos"
 msgstr "My Wishlist"
 
-#: .\store\templates\store\wish_list.html:29
+#: store/templates/store/wish_list.html:83
 msgid "Quitar de Favoritos"
 msgstr "Remove from Wishlist"
 
-#: .\store\templates\store\wish_list.html:38
+#: store/templates/store/wish_list.html:95
 msgid "No tienes productos en favoritos."
 msgstr "Your wishlist is empty."
 
-#: .\store\views.py:147
+#: store/views.py:149
 msgid "N/A"
 msgstr "N/A"
 
-#: .\store\views.py:383
+#: store/views.py:377
 msgid "Producto añadido a favoritos"
 msgstr "Product added to wishlist"
 
-#: .\store\views.py:392
+#: store/views.py:386
 msgid "Producto eliminado de favoritos"
 msgstr "Product removed from wishlist"
 
-#: .\store\views.py:413
+#: store/views.py:407
 msgid "Tu carrito está vacío"
 msgstr "Your cart is empty"
 
-#: .\store\views.py:443
+#: store/views.py:437
 msgid "Orden creada exitosamente"
 msgstr "Order created successfully"
 
-#: .\store\views.py:451
+#: store/views.py:445
 msgid "No se puede cancelar una orden ya enviada o entregada."
 msgstr "Cannot cancel an order that has already been shipped or delivered."
 
-#: .\store\views.py:452
+#: store/views.py:446
 msgid "Cancelada"
 msgstr "Canceled"
 
-#: .\store\views.py:453
+#: store/views.py:447
 msgid "La orden ya está cancelada."
 msgstr "The order is already canceled."
 
-#: .\store\views.py:457
+#: store/views.py:451
 msgid "Orden cancelada correctamente."
 msgstr "Order successfully canceled."
 
-#: .\store\views.py:475
+#: store/views.py:469
 msgid "Pago procesado exitosamente"
 msgstr "Payment processed successfully"
 
-#: .\store\views.py:479
+#: store/views.py:473
 msgid "Confirmación de pago"
 msgstr "Payment Confirmation"
 
-#: .\store\views.py:540
+#: store/views.py:534
 msgid "Reseña creada exitosamente"
 msgstr "Review created successfully"
 
-#: .\store\views.py:554
+#: store/views.py:548
 msgid "Reseña actualizada exitosamente"
 msgstr "Review updated successfully"
 
-#: .\store\views.py:566
+#: store/views.py:560
 msgid "Reseña eliminada exitosamente"
 msgstr "Review deleted successfully"
 
-#: .\store\views.py:592
+#: store/views.py:586
 #, python-brace-format
 msgid "Orden #{order_id}"
 msgstr "Order #{order_id}"
